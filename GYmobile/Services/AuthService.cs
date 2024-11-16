@@ -19,7 +19,7 @@ namespace GYmobile.Services
         public async Task<string?> LoginAsync(string username, string password)
         {
             var loginDto = new { Username = username, Password = password };
-            var response = await _httpClient.PostAsJsonAsync("api/auth/login", loginDto);
+            var response = await _httpClient.PostAsJsonAsync("swagger/api/auth/login", loginDto);
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<TokenResponse>();

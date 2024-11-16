@@ -39,7 +39,7 @@ namespace GYmobile.Services
 
         public async Task<object> GetHallById(int id)
         {
-            return await _httpClient.GetFromJsonAsync<object>($"api/common/hall/{id}");
+            return await _httpClient.GetFromJsonAsync<object>($"swagger/api/common/hall/{id}");
         }
 
         public async Task<IEnumerable<HallListRequestDTO>> GetHallListAsync(HallListFilter filter)
@@ -49,17 +49,17 @@ namespace GYmobile.Services
 
         public async Task<string> GetMonthSchedule(int hallId, DateOnly yearMonth)
         {
-            return await _httpClient.GetStringAsync($"api/common/monthSchedule?hallId={hallId}&yearMonth={yearMonth}");
+            return await _httpClient.GetStringAsync($"swagger/api/common/monthSchedule?hallId={hallId}&yearMonth={yearMonth}");
         }
 
         public async Task<IEnumerable<string>> GetHallTypesAsync()
         {
-            return await _httpClient.GetFromJsonAsync<IEnumerable<string>>("api/common/hall/types");
+            return await _httpClient.GetFromJsonAsync<IEnumerable<string>>("swagger/api/common/hall/types");
         }
 
         public async Task<string> GetUserInfoAsync(string id)
         {
-            return await _httpClient.GetStringAsync($"api/common/user/info/{id}");
+            return await _httpClient.GetStringAsync($"swagger/api/common/user/info/{id}");
         }
 
         public async Task<object> GetOptionsAsync()
