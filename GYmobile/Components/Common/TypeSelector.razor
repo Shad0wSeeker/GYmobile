@@ -1,0 +1,85 @@
+﻿
+
+@inject CommonService CommonService
+
+<Button Class="a-link-filer-panel" @onclick="ShowModal">
+    @SelectedType.Name  <Icon Class="ms-2" Name="IconName.ChevronRight" />
+</Button>
+
+<Modal @ref="modalRef" Closing="OnModalClosing">
+    <ModalContent Centered>
+        <ModalHeader>
+            <ModalTitle>Выберите тип помещения</ModalTitle>
+            <CloseButton @onclick="HideModal" />
+        </ModalHeader>
+        <ModalBody>
+            <RadioGroup TValue="int"
+                        CheckedValue="@SelectedType.Id"
+                        CheckedValueChanged="HallTypeSelected"
+                        Name="hallType">
+                @foreach (var item in HallTypes)
+                {
+                    <Radio Value="@item.Id">@item.Name</Radio>
+                }
+            </RadioGroup>
+        </ModalBody>
+        <ModalFooter>
+            <Button Type="ButtonType.Submit" Color="Color.Light" @onclick="HideModal">Закрыть</Button>
+        </ModalFooter>
+    </ModalContent>
+</Modal>
+
+@code {
+    [Parameter]
+    public HallType SelectedType { get; set; } = new HallType { Id = 0, Name = "Все типы" };
+    
+    [Parameter]
+    public EventCallback<HallType> SelectedTypeChanged { get; set; }
+    
+    [Parameter]
+    public EventCallback OnUpdated { get; set; }
+
+    private List<HallType> HallTypes { get; set; } = new();
+
+    #region Modal
+    private Modal modalRef;
+    private bool cancelClose = true;
+
+    private Task ShowModal() => modalRef.Show();
+
+    private async Task HideModal()
+    {
+        cancelClose = false;
+        if (SelectedTypeChanged.HasDelegate)
+        {
+            await SelectedTypeChanged.InvokeAsync(SelectedType);
+        }
+        await modalRef.Hide();
+        cancelClose = true;
+        if (OnUpdated.HasDelegate)
+        {
+            await OnUpdated.InvokeAsync();
+        }
+    }
+
+    private Task OnModalClosing(ModalClosingEventArgs e)
+    {
+        e.Cancel = cancelClose || e.CloseReason != CloseReason.UserClosing;
+        return Task.CompletedTask;
+    }
+    #endregion
+
+    protected override async Task OnInitializedAsync()
+    {
+        HallTypes.Add(SelectedType);
+        var data = await CommonService.GetHallTypesAsync();
+        
+        HallTypes.AddRange(data.Select((typeName, index) => new HallType { Id = index + 1, Name = typeName }));
+    }
+
+    Task HallTypeSelected(int id)
+    {
+        SelectedType = HallTypes.First(t => t.Id == id);
+        return Task.CompletedTask;
+    }
+}
