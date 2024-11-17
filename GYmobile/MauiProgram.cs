@@ -19,22 +19,24 @@ namespace GYmobile
 
             builder.Services.AddHttpClient<AuthService>(client =>
             {
-                client.BaseAddress = new Uri("http://rentagym.runasp.net/");
+                client.BaseAddress = new Uri("http://rentagym.runasp.net");
             });
 
             builder.Services.AddHttpClient<CommonService>(client =>
             {
-                client.BaseAddress = new Uri("http://rentagym.runasp.net/");
+                client.BaseAddress = new Uri("http://rentagym.runasp.net");
             });
+
+            //builder.Services.AddSingleton<CommonService>();
 
             builder.Services.AddHttpClient<LandlordService>(client =>
             {
-                client.BaseAddress = new Uri("http://rentagym.runasp.net/");
+                client.BaseAddress = new Uri("http://rentagym.runasp.net");
             });
 
             builder.Services.AddHttpClient<TenantService>(client =>
             {
-                client.BaseAddress = new Uri("http://rentagym.runasp.net/");
+                client.BaseAddress = new Uri("http://rentagym.runasp.net");
             });
 
 

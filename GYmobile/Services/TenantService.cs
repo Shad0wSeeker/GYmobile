@@ -19,12 +19,12 @@ namespace GYmobile.Services
 
         public async Task<string> GetTenantRentsAsync(string tenantId)
         {
-            return await _httpClient.GetStringAsync($"swagger/api/tenant/t/rents/{tenantId}");
+            return await _httpClient.GetStringAsync($"/api/tenant/t/rents/{tenantId}");
         }
 
         public async Task<bool> AddReviewAsync(Review review)
         {
-            var response = await _httpClient.PostAsJsonAsync("swagger/api/tenant/review", review);
+            var response = await _httpClient.PostAsJsonAsync("/api/tenant/review", review);
             return response.IsSuccessStatusCode;
         }
 
@@ -38,7 +38,7 @@ namespace GYmobile.Services
                 from,
                 to
             };
-            var response = await _httpClient.PostAsJsonAsync("swagger/api/tenant/rent", requestBody);
+            var response = await _httpClient.PostAsJsonAsync("/api/tenant/rent", requestBody);
             return response.IsSuccessStatusCode;
         }
     }
