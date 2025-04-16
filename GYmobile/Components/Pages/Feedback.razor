@@ -1,0 +1,129 @@
+﻿@* @page "/halls/{id}/feedbacks"
+@using System.Diagnostics
+
+@inject NavigationManager NavManager
+@inject CommonService CommonService;
+
+@if(Current == null)
+{
+    <p>Загрузка ...</p>
+    <div class="spinner-border text-warning" role="status">
+        <span class="visually-hidden">Загрузка...</span>
+    </div>
+}
+else if (!Current.Reviews.Any())
+{
+    <p>Опаньки... здесь еще никто не был :)</p>
+}
+else
+{        
+    @foreach(var data in Current.Reviews)
+    {
+        <FeedbackComponent Data="data" />
+    }
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+    HallDetailsRequestDTO Current { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (int.TryParse(Id, out int hallId))
+            {
+                Current = await CommonService.GetHallByIdAsync(hallId);
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+
+
+
+        // Current = await Mediator.Send(new GetHallByIdRequest(Int32.Parse(id)));
+        // await base.OnInitializedAsync();
+    }
+}
+ *@
+
+
+
+
+
+@page "/halls/{id}/feedbacks"
+
+@inject CommonService CommonService
+@inject NavigationManager NavManager
+
+<div class="main-content">
+
+    @if (isLoading)
+    {
+        <div class="loading-container">
+            <div class="spinner"></div>
+            <span>Загрузка...</span>
+        </div>
+    }
+    else if (Current == null || !Current.Reviews.Any())
+    {
+        <div class="no-reviews">
+            <span>Опаньки... здесь еще никто не был :)</span>
+        </div>
+    }
+    else
+    {
+        <h3>Отзывы о зале "@Current.Name"</h3>
+        <div class="reviews-container">
+            @foreach (var review in Current.Reviews)
+            {
+                <GYmobile.Components.Common.FeedbackComponent Data="review" />
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? id { get; set; }
+
+    private HallDetailsRequestDTO? Current { get; set; }
+    private bool isLoading = true;
+    private string? errorMessage;
+
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = null;
+
+            if (int.TryParse(id, out int hallId))
+            {
+                Current = await CommonService.GetHallById(hallId);
+
+                // Рассчитываем OverallRating, если сервер не предоставляет
+                if (Current != null && Current.Reviews != null && Current.Reviews.Any())
+                {
+                    Current.OverallRating = Current.Reviews.Average(r => r.Mark);
+                    Current.ReviewCount = Current.Reviews.Count;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка при загрузке отзывов: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+        await base.OnParametersSetAsync();
+    }
+}

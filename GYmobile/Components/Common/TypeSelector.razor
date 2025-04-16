@@ -1,6 +1,4 @@
-﻿
-
-@inject CommonService CommonService
+﻿@* @inject CommonService CommonService
 
 <Button Class="a-link-filer-panel" @onclick="ShowModal">
     @SelectedType.Name  <Icon Class="ms-2" Name="IconName.ChevronRight" />
@@ -71,15 +69,90 @@
 
     protected override async Task OnInitializedAsync()
     {
-        HallTypes.Add(SelectedType);
+        HallTypes.Add(SelectedType); // Добавление типа "Все типы"
+
+        // Получение данных из API
         var data = await CommonService.GetHallTypesAsync();
-        
-        HallTypes.AddRange(data.Select((typeName, index) => new HallType { Id = index + 1, Name = typeName }));
+
+        // Проверка на null
+        if (data != null)
+        {
+            HallTypes.AddRange(data);
+        }
     }
 
     Task HallTypeSelected(int id)
     {
         SelectedType = HallTypes.First(t => t.Id == id);
         return Task.CompletedTask;
+    }
+} *@
+
+
+
+
+@inject CommonService CommonService
+
+<div class="dropdown">
+    <!-- Кнопка для открытия выпадающего списка -->
+    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+        @SelectedType.Name <Icon Class="ms-2" Name="IconName.ChevronDown" />
+    </button>
+
+    <!-- Выпадающее меню с чекбоксами -->
+    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        @foreach (var item in HallTypes)
+
+        {
+                <div class="dropdown-item">
+                    <input type="checkbox" id="type-@item.Id" checked="@(SelectedType.Id == item.Id)" @onchange="() => HallTypeSelected(item.Id)" />
+                    <label for="type-@item.Id">@item.Name</label>
+                </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+
+    public HallType SelectedType { get; set; } = new HallType { Id = 0, Name = "Все типы" };
+
+    [Parameter]
+    public EventCallback<HallType> SelectedTypeChanged { get; set; }
+
+    [Parameter]
+    public EventCallback OnUpdated { get; set; }
+    private List<HallType> HallTypes { get; set; } = new();
+    protected override async Task OnInitializedAsync()
+    {
+
+        HallTypes.Add(new HallType { Id = 0, Name = "Все типы" }); // Добавление типа "Все типы"
+
+
+
+        // Получение данных из API
+
+        var data = await CommonService.GetHallTypesAsync();
+        // Проверка на null
+
+        if (data != null)
+        {
+            HallTypes.AddRange(data);
+        }
+    }
+
+    private async Task HallTypeSelected(int id)
+    {
+        SelectedType = HallTypes.First(t => t.Id == id);
+        if (SelectedTypeChanged.HasDelegate)
+        {
+            await SelectedTypeChanged.InvokeAsync(SelectedType);
+        }
+
+        if (OnUpdated.HasDelegate)
+        {
+            await OnUpdated.InvokeAsync();
+        }
+
     }
 }

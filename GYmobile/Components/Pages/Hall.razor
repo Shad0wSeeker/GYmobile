@@ -1,0 +1,437 @@
+﻿@* @page "/halls/{id}"
+
+@inject IJSRuntime JS
+@inject NavigationManager NavManager
+@inject CommonService CommonService
+@rendermode RenderMode.InteractiveServer
+
+
+@using System.Globalization
+@using Newtonsoft.Json
+
+
+
+@if (Current == null)
+{
+    <div class="spinner-border text-warning" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else
+{
+    <PageTitle>@Current.Name</PageTitle>
+
+    <div class="centered-items">
+        <div class="row items">
+            <!-- Содержимое слайдера -->
+            <section class="container">
+                <div class="slider-wrapper">
+                    @* <div class="slider" @ref="slider">
+                        @foreach (var image in images)
+                        {
+                            <img id="@image.Id" class="img-item" src="@image.Source" alt="Hall image" />
+                        }
+                    </div> *@
+                    @* <div class="slider-nav">
+                        @foreach (var image in images)
+                        {
+                            <a @onclick="(() => ChangeSlide(image.Id))" @onclick:preventDefault></a>
+                        }
+                    </div> *@
+@*                 </div>
+            </section> *@
+            <!-- Содержимое рейтинга -->
+            @* <div class="rating-block">
+                <p class="rating-name">Рейтинг</p>
+                <div class="rating-info">
+                    <Rating Color="Color.Warning" SelectedValue="@((int)Current.OverallRating)" Disabled=true MaxValue="5" />
+                    @Current.OverallRating.ToString("0.00")
+                    <p class="rating-count">оценило: @Current.ReviewCount чел.</p>
+                </div>
+            </div> *@
+            <!-- Содержимое описания -->
+           @*  <div class="container-description">
+                <p class="description">@Current.Description</p>
+            </div>
+            <p class="price">Цена: @Current.Price BYN</p>
+            <p class="address">@Current.Address</p> *@
+            @* <div class="contact-info">
+                <!-- Карта -->
+                <MapView Longitude="Current.Longitude" Latitude="Current.Latitude" Zoom="17" Style="height: 400px; width: 600px;">
+                    <Map ArcGISDefaultBasemap="arcgis-topographic">
+                        <BingMapsLayer Key="AhpMcEovB9kF91KWQbiV-Tt9EkId-9iYFaBc04hivbgoPjzfyjkeU804ZgUc9z0-" Style="BingImageryStyle.Hybrid" />
+                    </Map>
+                    <Graphic>
+                        <Point Latitude="Current.Longitude" Longitude="Current.Latitude" />
+                        <SimpleMarkerSymbol Color="@(new MapColor(226, 119, 40))">
+                            <Outline Color="@(new MapColor(255, 255, 255))" Width="1" />
+                        </SimpleMarkerSymbol>
+                    </Graphic>
+                </MapView> *@
+               @*  <div class="contact-block">
+                    <p class="contact-head">Контактная информация:</p>
+                    <p class="contact-phone">@Current.UserName</p>
+                    <p class="contact-phone">@Current.PhoneNumber</p>
+                    <p class="contact-email">@Current.Email</p>
+                </div> *@
+           @*  </div> *@
+       @*  </div>
+    </div>
+} *@
+@* 
+@code {
+    [Parameter]
+
+    public int id { get; set; }
+
+    private HallDetailsRequestDTO Current { get; set; }
+
+    private List<(string Source, string Id)> images = new();
+
+
+
+    private ElementReference slider;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+        Console.WriteLine(JsonConvert.SerializeObject(Current));
+
+
+
+        try
+        {
+            Current = await CommonService.GetHallById(id);
+            if (Current?.Images != null)
+            {
+                for (int i = 0; i < Current.Images.Count; i++)
+                {
+                    images.Add((Current.Images[i].ImageUri, $"slide-{i + 1}"));
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine($"Error loading hall details: {ex.Message}");
+
+        }
+    }
+
+    
+
+    private async Task ChangeSlide(string slideId)
+
+    {   // Здесь можно добавить логику смены слайдов
+
+        Console.WriteLine($"Changing slide to: {slideId}");
+
+    }
+} *@
+
+
+
+
+@*LATEST*@
+@* 
+
+@page "/halls/{id}"
+@inject IJSRuntime JS
+@inject NavigationManager NavManager
+@inject CommonService CommonService
+@inject AuthService AuthService
+
+@if (Current == null)
+{
+    <ActivityIndicator IsRunning="true" Color="Orange" />
+}
+else
+{
+    <PageTitle>@Current.Name</PageTitle>
+
+    <ScrollView>
+        <StackLayout Padding="10">
+            <!-- Слайдер изображений -->
+            <CarouselView ItemsSource="@images">
+                <CarouselView.ItemTemplate>
+                    <DataTemplate>
+                        <Image Source="{Binding Source}" Aspect="AspectFill" />
+                    </DataTemplate>
+                </CarouselView.ItemTemplate>
+            </CarouselView>
+
+            <!-- Название и действия -->
+            <StackLayout Orientation="Horizontal" HorizontalOptions="CenterAndExpand">
+                <Label Text="@Current.Name" FontSize="Large" FontAttributes="Bold" />
+                <Button Text="Отзывы" Clicked="OnFeedbackClicked" />
+                <Button Text="Арендовать" Clicked="OnRentClicked" />
+            </StackLayout>
+
+            <!-- Рейтинг -->
+            <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                <Label Text="Рейтинг:" FontSize="Medium" />
+                <Label Text="@Current.OverallRating.ToString("0.00")" FontSize="Medium" />
+                <Label Text="@($"({Current.ReviewCount} чел.)")" FontSize="Small" />
+            </StackLayout>
+
+            <!-- Описание -->
+            <Label Text="@Current.Description" FontSize="Medium" />
+
+            <!-- Цена и адрес -->
+            <Label Text="@($"Цена: {Current.Price} BYN")" FontSize="Medium" />
+            <Label Text="@Current.Address" FontSize="Medium" /> *@
+
+            @* <!-- Карта -->
+            <maps:Map x:Name="map" MapType="Street" IsShowingUser="true" WidthRequest="320" HeightRequest="200">
+                <maps:Map.Pins>
+                    <maps:Pin Label="@Current.Name" Address="@Current.Address" Position="{Binding Position}" />
+                </maps:Map.Pins>
+            </maps:Map> *@
+
+            <!-- Контактная информация -->
+         @*    <StackLayout>
+                <Label Text="Контактная информация:" FontSize="Medium" FontAttributes="Bold" />
+                <Label Text="@Current.UserName" FontSize="Medium" />
+                <Label Text="@Current.PhoneNumber" FontSize="Medium" />
+                <Label Text="@Current.Email" FontSize="Medium" />
+            </StackLayout>
+        </StackLayout>
+    </ScrollView>
+}
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+    HallDetailsRequestDTO Current { get; set; }
+    private List<(string Source, string Id)> images;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Current = await CommonService.GetHallById(Int32.Parse(id));
+        images = Current?.Images.Select((img, i) => (img.ImageUri, $"slide-{i + 1}")).ToList();
+    }
+
+    private void OnFeedbackClicked()
+    {
+        NavManager.NavigateTo($"/halls/{id}/feedbacks");
+    }
+
+    private async void OnRentClicked()
+    {
+        var token = await AuthService.LoginAsync("user1@gmail.com", "123456"); // Замените на реальные данные
+        if (token != null)
+        {
+            NavManager.NavigateTo($"/rent/{id}");
+        }
+        else
+        {
+            NavManager.NavigateTo($"/Account/login");
+        }
+    }
+} *@
+
+
+@page "/hall/{id}"
+@using Microsoft.Maui.Controls.Maps
+@using Microsoft.Maui.Maps
+@using System.Diagnostics
+@using System.Globalization
+@inject CommonService CommonService
+@inject NavigationManager NavManager
+
+<PageTitle>@(Current?.Name ?? "Зал")</PageTitle>
+
+<div class="main-content">
+    @if (Current == null)
+    {
+        <div class="loading-spinner">
+            <span>Загрузка...</span>
+        </div>
+    }
+    else
+    {
+        <!-- Шапка с названием и рейтингом -->
+        @* <div class="hall-header">
+            <h1>@Current.Name</h1>
+            <div class="rating-container">
+                <span class="rating-label">Рейтинг</span>
+                <span class="rating-value">Оценило @Current.ReviewCount чел.</span>
+                @if (Current.OverallRating > 0)
+                {
+                    <span class="rating-stars">★ @Current.OverallRating.ToString("0.0")</span>
+                }
+            </div>
+        </div> *@
+
+        <div class="hall-content">
+            <!-- Галерея изображений -->
+            @if (Current.Images != null && Current.Images.Any())
+            {
+                <div class="gallery">
+                    @foreach (var image in Current.Images.Take(3))
+                    {
+                        <img src="@image.ImageUri" alt="Фото зала" class="gallery-image" />
+                    }
+                </div>
+            }
+
+            <!-- Кнопки действий -->
+            <div class="action-buttons">
+                <button class="actions" @onclick="NavigateToRent">
+                    Арендовать
+                </button>
+                <button class="actions" @onclick="NavigateToReviews">
+                    Отзывы клиентов
+                </button>
+
+            </div>
+        </div>
+
+        <div class="hall-header">
+            <h1>@Current.Name</h1>
+            <div class="rating-container">
+                <span class="rating-label">Рейтинг</span>
+                <div class="stars">
+                    @for (int i = 1; i <= 5; i++)
+                    {
+                        <span class="star @(Current.ReviewCount > 0 && i <= Current.OverallRating ? "filled" : "empty")">★</span>
+                    }
+                    <span class="rating-value">@Current.OverallRating.ToString("0.00")</span>
+                </div>
+                <div class="rating-count">оценило: @Current.ReviewCount чел.</div>
+            </div>
+        </div>
+
+        <!-- Основной контент -->
+        <div class="hall-content">
+            
+
+            <!-- Описание -->
+            <div class="description-section">
+                <h3>Описание</h3>
+                <p>@Current.Description</p>
+            </div>
+
+            <!-- Адрес -->
+            <div class="address-section">
+                <h3>Адрес</h3>
+                <p>@Current.Address, @Current.City</p>
+            </div>
+
+            <!-- Карта -->
+            @* <div style="width:100%; height:300px; margin:20px 0;"> *@
+            <div class="map-container">
+
+                    <iframe width="100%" height="300"
+                            src="@GetOpenStreetMapUrl()"
+                            frameborder="0"
+                            loading="lazy">
+                    </iframe>
+                    <br />
+                    <small>
+                        <a href="@GetLargeMapUrl()" target="_blank">Открыть в полном размере</a>
+                    </small>                
+              
+            </div>
+
+           
+
+            <!-- Контакты -->
+            <div class="contacts-section">
+                <h3>Контактная информация</h3>
+                <div class="contact-item">
+                    <span>Телефон:</span>
+                    <span>@Current.PhoneNumber</span>
+                </div>
+                <div class="contact-item">
+                    <span>Email:</span>
+                    <span>@Current.Email</span>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private HallDetailsRequestDTO Current { get; set; }
+    private bool isLoading = true;
+
+    private Map map;
+    private Location pinLocation;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            if (int.TryParse(Id, out int hallId))
+            {
+                Current = await CommonService.GetHallById(hallId);
+
+                Debug.WriteLine($"Данные загружены: {Current != null}");
+
+                Debug.WriteLine($"Координаты: Lat={Current.Latitude}, Long={Current.Longitude}");
+                Debug.WriteLine($"Адрес: {Current.Address}, {Current.City}");
+
+                if (Current.Latitude == 0 && Current.Longitude == 0)
+                {
+                    Debug.WriteLine("Внимание: получены нулевые координаты!");
+                }
+
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Ошибка загрузки: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+
+    private string GetOpenStreetMapUrl()
+    {
+        if (Current == null) return string.Empty;
+
+        double lat = Current.Longitude;
+        double lon = Current.Latitude;
+
+        string latStr = lat.ToString(CultureInfo.InvariantCulture);
+        string lonStr = lon.ToString(CultureInfo.InvariantCulture);
+
+        return $"https://www.openstreetmap.org/export/embed.html?" +
+           $"bbox={lonStr},{latStr},{lonStr},{latStr}" +
+           $"&layer=mapnik" +
+           $"&marker={latStr},{lonStr}";
+    }
+
+    private string GetLargeMapUrl()
+    {
+        if (Current == null) return "#";   
+
+
+        double lat = Current.Longitude;
+        double lon = Current.Latitude;
+
+        string latStr = lat.ToString(CultureInfo.InvariantCulture);
+        string lonStr = lon.ToString(CultureInfo.InvariantCulture);
+        
+        return $"https://www.openstreetmap.org/?mlat={latStr}&mlon={lonStr}#map=17/{latStr}/{lonStr}";
+    }
+
+
+    private void NavigateToRent()
+    {
+        NavManager.NavigateTo($"/rent/{Id}");
+    }
+
+    private void NavigateToReviews()
+    {
+        NavManager.NavigateTo($"/halls/{Id}/feedbacks");
+    }
+}

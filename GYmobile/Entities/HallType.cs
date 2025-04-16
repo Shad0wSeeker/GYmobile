@@ -6,10 +6,9 @@ using System.Threading.Tasks;
 
 namespace GYmobile.Entities
 {
-    /// <summary>
-    /// Тип зала
-    /// </summary>
-    public class HallType : Entity
+    public class HallType 
     {
+        public int Id { get; set; }
+        public string Name { get; set; }
     }
 }

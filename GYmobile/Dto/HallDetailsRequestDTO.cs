@@ -17,7 +17,7 @@ namespace GYmobile.Dto
         public bool PaymentType { get; set; }
         public List<WorkSchedulePiece> WorkSchedule { get; set; }
         public List<ImageData> Images { get; set; }
-        public List<Review>? Reviews { get; set; }
+        public List<Review> Reviews { get; set; }
         public double OverallRating { get; set; } //пока не реализовано
         public int ReviewCount { get; set; }
 

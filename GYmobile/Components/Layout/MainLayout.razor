@@ -1,17 +1,21 @@
-﻿@inherits LayoutComponentBase
+﻿@using GYmobile.Components.Common
+@inherits LayoutComponentBase
 
 <div class="page">
+    <!-- Боковая панель (скрыта на мобильных устройствах) -->
     <div class="sidebar">
         <NavMenu />
     </div>
-
+    
+    <!-- Основной контент -->
     <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
         <article class="content px-4">
             @Body
         </article>
+        
+
     </main>
+
+    <!-- Нижняя панель навигации -->
+    <BottomNav />
 </div>

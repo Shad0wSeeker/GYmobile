@@ -1,14 +1,66 @@
-﻿<div class="card m-1" style="border-color:#FFC34F;">
+﻿@* <div class="card m-1" style="border-color:#FFC34F;">
     <!-- Содержимое рейтинга -->
     <div class="rating-block">
-        <p class="rating-name">Оценка: </p>
-        <div class="rating-info">
+        <p class="rating-label">Оценка: </p>
+        @* <div class="rating-info">
             <Rating Color="Color.Warning" SelectedValue="@((int)Data.Mark)" Disabled=true MaxValue="5" /> @Data.Mark.ToString("0.00")
+        </div> *@
+
+        @*<div class="stars">
+            @for(int i =1; i<=5; i++)
+            {
+                <span class="star @(Data.Mark)">★</span>
+            }
+        </div>
+
+
+        <div class="stars">
+            @for (int i = 1; i <= 5; i++)
+            {
+                <span class="star @(Current.ReviewCount > 0 && i <= Current.OverallRating ? "filled" : "empty")">★</span>
+            }
+            <span class="rating-value">@Current.OverallRating.ToString("0.00")</span>
         </div>
     </div>
     <!-- Содержимое рейтинга -->
     <p class="user-name">@Data.Username</p>
     <p class="user-content">@Data.Contents</p>
+</div>
+
+@code {
+    [Parameter]
+    public Review? Data { get; set; }
+
+    [Parameter]
+    public HallDetailsRequestDTO Current { get; set; }
+} *@
+
+
+
+
+
+
+
+
+
+
+<div class="feedback-card">
+    <!-- Блок с рейтингом -->
+    <div class="rating-block">
+        <span class="rating-name">Оценка: </span>
+        <div class="rating-stars">
+             @for (int i = 0; i < 5; i++)
+             {
+                 <span class="star @(i < Data.Mark ? "filled" : "empty")">★</span>
+             }
+            <span class="rating-value-black">@((Data?.Mark ?? 0).ToString("0.0"))</span>
+        </div>
+    </div>
+
+    <div class="user-info">
+        <span class="user-name">@Data.Username</span>
+        <p class="user-content">@Data.Contents</p>
+    </div>
 </div>
 
 @code {

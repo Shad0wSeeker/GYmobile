@@ -1,4 +1,10 @@
-﻿<div class="card m-1" style="border-color:#FFC34F;">
+﻿@* @inject NavigationManager NavigationManager
+
+<div>
+    <p>@Current.Thumbnail.ImageUri</p>
+</div>
+
+<div class="card m-1" style="border-color:#FFC34F;">
     <div class="row g-0">
         <div class="col-md-4 item">
             <img src="@Current.Thumbnail.ImageUri" class="image">
@@ -15,12 +21,61 @@
                 <h4 class="card-title">от @Current.Price руб</h4>
             </Div>
             <div class=" text-end align-text-bottom p-2">
-                <a href="/halls/@Current.Id" class="text-muted">Подробнее</a>
+                <a href="#" class="text-muted" @onclick="NavigateToHall">Подробнее</a>
             </div>
         </div>
     </div>
 </div>
 @code {
+
     [Parameter]
-    public HallListRequestDTO Current { get; set; }
+
+    public HallListRequestDTO Current { get; set; } = new();
+
+    void NavigateToHall()
+    {
+        NavigationManager.NavigateTo($"/halls/{Current.Id}");
+    }
+} *@
+
+@using GYmobile.Dto
+@inject NavigationManager NavigationManager
+
+<div class="hall-card">
+    <div class="hall-image">
+        <img src="@Current.Thumbnail.ImageUri" alt="@Current.Name" />
+    </div>
+    <div class="hall-details">
+        <h3>@Current.Name</h3>
+        <p>@Current.Description</p>
+        <div class="hall-header">
+            <div class="rating-container">
+                <span class="rating-label">Рейтинг</span>
+                <div class="stars">
+                    @for (int i = 1; i <= 5; i++)
+
+                    {
+                        <span class="star @(Current.OverallRating > 0 && i <= Current.OverallRating ? "filled" : "empty")">★</span>
+                    }
+                    <span class="rating-value-black">@Current.OverallRating.ToString("0.00")</span>
+                </div>               
+            </div>
+        </div>
+    </div>
+    <div class="hall-price">
+        <h4>от @Current.Price BYN</h4>
+        <a href="#" @onclick="NavigateToHall">Подробнее</a>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+
+    public HallListRequestDTO Current { get; set; } = new();
+
+    void NavigateToHall()
+    {
+        NavigationManager.NavigateTo($"/hall/{Current.Id}");
+    }
+
 }

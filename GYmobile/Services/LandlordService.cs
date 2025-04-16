@@ -34,6 +34,7 @@ namespace GYmobile.Services
         {
             return await _httpClient.GetFromJsonAsync<IEnumerable<Facility>>($"/api/landlord/ll/facilities/{landlordId}");
         }
+       
 
         public async Task<string> GetHallRentsAsync(string landlordId)
         {

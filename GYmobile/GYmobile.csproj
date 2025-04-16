@@ -67,7 +67,174 @@
     </ItemGroup>
 
     <ItemGroup>
+      <MauiImage Remove="Resources\Images\1.jpg" />
+      <MauiImage Remove="Resources\Images\2.jpg" />
+      <MauiImage Remove="Resources\Images\3.jpg" />
+      <MauiImage Remove="Resources\Images\32e2maon.jpg" />
+      <MauiImage Remove="Resources\Images\4.jpg" />
+      <MauiImage Remove="Resources\Images\5.jpg" />
+      <MauiImage Remove="Resources\Images\anonymous.png" />
+      <MauiImage Remove="Resources\Images\cat.png" />
+      <MauiImage Remove="Resources\Images\chatBackground.png" />
+      <MauiImage Remove="Resources\Images\dgpcfyfy.jpg" />
+      <MauiImage Remove="Resources\Images\exampleFacility.jpg" />
+      <MauiImage Remove="Resources\Images\eye.png" />
+      <MauiImage Remove="Resources\Images\jf4edy2n.jpg" />
+      <MauiImage Remove="Resources\Images\kgwqln1r.png" />
+      <MauiImage Remove="Resources\Images\knfdjewd.jpg" />
+      <MauiImage Remove="Resources\Images\mapBackground.png" />
+      <MauiImage Remove="Resources\Images\marker.png" />
+      <MauiImage Remove="Resources\Images\nq5fqipf.jpg" />
+      <MauiImage Remove="Resources\Images\objectBackground.png" />
+      <MauiImage Remove="Resources\Images\oo1210gh.png" />
+      <MauiImage Remove="Resources\Images\qjtjejmc.png" />
+      <MauiImage Remove="Resources\Images\uAvatar.png" />
+      <MauiImage Remove="Resources\Images\ulxltimc.png" />
+      <MauiImage Remove="Resources\Images\wsnpp3zg.png" />
+      <MauiImage Remove="Resources\Images\xweozdk4.png" />
+      <MauiImage Remove="Resources\Images\yhz2wz4n.jpg" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Resources\Images\1.jpg" />
+      <None Remove="Resources\Images\2.jpg" />
+      <None Remove="Resources\Images\3.jpg" />
+      <None Remove="Resources\Images\32e2maon.jpg" />
+      <None Remove="Resources\Images\4.jpg" />
+      <None Remove="Resources\Images\5.jpg" />
+      <None Remove="Resources\Images\anonymous.png" />
+      <None Remove="Resources\Images\cat.png" />
+      <None Remove="Resources\Images\chatBackground.png" />
+      <None Remove="Resources\Images\dgpcfyfy.jpg" />
+      <None Remove="Resources\Images\exampleFacility.jpg" />
+      <None Remove="Resources\Images\eye.png" />
+      <None Remove="Resources\Images\jf4edy2n.jpg" />
+      <None Remove="Resources\Images\kgwqln1r.png" />
+      <None Remove="Resources\Images\knfdjewd.jpg" />
+      <None Remove="Resources\Images\mapBackground.png" />
+      <None Remove="Resources\Images\marker.png" />
+      <None Remove="Resources\Images\nq5fqipf.jpg" />
+      <None Remove="Resources\Images\objectBackground.png" />
+      <None Remove="Resources\Images\oo1210gh.png" />
+      <None Remove="Resources\Images\qjtjejmc.png" />
+      <None Remove="Resources\Images\uAvatar.png" />
+      <None Remove="Resources\Images\ulxltimc.png" />
+      <None Remove="Resources\Images\wsnpp3zg.png" />
+      <None Remove="Resources\Images\xweozdk4.png" />
+      <None Remove="Resources\Images\yhz2wz4n.jpg" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Content Include="Resources\Images\1.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\2.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\3.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\32e2maon.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\4.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\5.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\anonymous.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\cat.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\chatBackground.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\dgpcfyfy.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\exampleFacility.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\eye.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\jf4edy2n.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\kgwqln1r.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\knfdjewd.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\mapBackground.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\marker.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\nq5fqipf.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\objectBackground.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\oo1210gh.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\qjtjejmc.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\uAvatar.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\ulxltimc.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\wsnpp3zg.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\xweozdk4.png">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+      <Content Include="Resources\Images\yhz2wz4n.jpg">
+        <ExcludeFromSingleFile>true</ExcludeFromSingleFile>
+        <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      </Content>
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="AutoMapper" Version="13.0.1" />
+        <PackageReference Include="Blazored.LocalStorage" Version="4.5.0" />
+        <PackageReference Include="Blazored.Toast" Version="4.2.1" />
         <PackageReference Include="Blazorise.Bootstrap" Version="1.6.2" />
         <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.6.2" />
         <PackageReference Include="MediatR" Version="12.4.1" />
@@ -76,6 +243,8 @@
         <PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Maui" Version="$(MauiVersion)" />
         <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Maui.Controls.Maps" Version="8.0.3" />
+        <PackageReference Include="Microsoft.Maui.Maps" Version="8.0.3" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     </ItemGroup>
 

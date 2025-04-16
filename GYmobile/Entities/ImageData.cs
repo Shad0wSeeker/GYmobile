@@ -10,5 +10,6 @@ namespace GYmobile.Entities
     {
         public string ImageUri { get; set; }
         public int HallId { get; set; }
+
     }
 }

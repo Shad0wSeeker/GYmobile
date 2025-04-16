@@ -13,6 +13,7 @@ using GYmobile.Filters;
 using Newtonsoft.Json;
 using System.Diagnostics;
 
+
 namespace GYmobile.Services
 {    
     public class CommonService
@@ -27,7 +28,7 @@ namespace GYmobile.Services
 
         public async Task<string> GetChatRoomDataAsync(int rentBorderId)
         {
-            return await _httpClient.GetStringAsync($"api/common/data/chatRoom?rentBorderId={rentBorderId}");
+            return await _httpClient.GetStringAsync($"/api/common/data/chatRoom?rentBorderId={rentBorderId}");
         }
 
         public async Task<string> GetChatHistoryAsync(string name)
@@ -35,63 +36,58 @@ namespace GYmobile.Services
             return await _httpClient.GetStringAsync($"/api/common/chat/history?name={name}");
         }
 
-        public async Task<object> GetDaySchedule(int hallId, DateOnly date)
+        public async Task<List<string>> GetDaySchedule(int hallId, DateOnly date)
         {
-            return await _httpClient.GetFromJsonAsync<object>($"/api/common/day?hallId={hallId}&date={date}");
+            Console.WriteLine($"hallId = {hallId}, date = {date}");
+            return await _httpClient.GetFromJsonAsync<List<string>>($"/api/common/day?hallId={hallId}&date={date.ToString("yyyy-MM-dd")}");
         }
 
-        public async Task<object> GetHallById(int id)
-        {
-            return await _httpClient.GetFromJsonAsync<object>($"/api/common/hall/{id}");
+        public async Task<HallDetailsRequestDTO> GetHallById(int id)
+        {           
+           return await _httpClient.GetFromJsonAsync<HallDetailsRequestDTO>($"/api/common/hall/{id}");
         }
+        /*public async Task<HallDetailsRequestDTO> GetHallById(int id)
+        {
+            var response = await _httpClient.GetAsync($"/api/common/hall/{id}");
+            response.EnsureSuccessStatusCode(); // Проверяем, что запрос успешный
+            var json = await response.Content.ReadAsStringAsync(); // Читаем JSON как строку
+            return JsonConvert.DeserializeObject<HallDetailsRequestDTO>(json); // Десериализуем JSON в объект
+        }*/
 
         public async Task<IEnumerable<HallListRequestDTO>> GetHallListAsync(HallListFilter filter)
         {
-           
+                                             
             return await _httpClient.GetFromJsonAsync<IEnumerable<HallListRequestDTO>>("/api/common/hall/list");
         }
-        /*public async Task<IEnumerable<HallListRequestDTO>> GetHallListAsync(HallListFilter filter)
+        public async Task<HallDetailsRequestDTO> GetHallByIdAsync(int hallId)
         {
-            var returnResponse = new List<HallListRequestDTO>();
-            using (var client = new HttpClient()) 
-            {
-                string url = $"{baseUrl}/api/common/hall/list";
-                var apiResponse = await client.GetAsync(url);
-
-                if (apiResponse.StatusCode == System.Net.HttpStatusCode.OK)
-                {
-                    var response = await apiResponse.Content.ReadAsStringAsync();
-                    var deserializeResponse = JsonConvert.DeserializeObject<HallListRequestDTO>(response);
-
-
-                    returnResponse = JsonConvert.DeserializeObject<List<HallListRequestDTO>>(deserializeResponse.ToString());
-                    //if (deserializeResponse.IsSuccess)
-                }
-                            
-                                
-            }
-            return returnResponse;
-            *//* return await _httpClient.GetFromJsonAsync<IEnumerable<HallListRequestDTO>>("/api/common/hall/list");*//*
-        }*/
+            return await _httpClient.GetFromJsonAsync<HallDetailsRequestDTO>($"/api/common/hall/{hallId}");
+        }
 
         public async Task<string> GetMonthSchedule(int hallId, DateOnly yearMonth)
         {
-            return await _httpClient.GetStringAsync($"/api/common/monthSchedule?hallId={hallId}&yearMonth={yearMonth}");
+            Console.WriteLine($"hallId = {hallId}, yearMonth = {yearMonth}");
+            return await _httpClient.GetStringAsync($"/api/common/monthSchedule?hallId={hallId}&yearMonth={yearMonth.ToString("yyyy-MM-dd")}");
         }
 
-        public async Task<IEnumerable<string>> GetHallTypesAsync()
+        public async Task<IEnumerable<HallType>> GetHallTypesAsync()
         {
-            return await _httpClient.GetFromJsonAsync<IEnumerable<string>>("/api/common/hall/types");
+            return await _httpClient.GetFromJsonAsync<IEnumerable<HallType>>("/api/common/hall/types");
         }
+
 
         public async Task<string> GetUserInfoAsync(string id)
         {
-            return await _httpClient.GetStringAsync($"swagger/api/common/user/info/{id}");
+            return await _httpClient.GetStringAsync($"/api/common/user/info/{id}");
         }
 
-        public async Task<object> GetOptionsAsync()
+        //public async Task<object> GetOptionsAsync()
+        //{
+        //    return await _httpClient.GetStringAsync("api/common/options");
+        //}
+        public async Task<IEnumerable<Option>> GetOptionsAsync()
         {
-            return await _httpClient.GetStringAsync("api/common/options");
+            return await _httpClient.GetFromJsonAsync<IEnumerable<Option>>("api/common/options");
         }
 
         public async Task<string> SaveMessageAsync(ChatMessage msg)

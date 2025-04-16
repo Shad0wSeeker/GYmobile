@@ -1,53 +1,49 @@
 ﻿
 @inject CommonService CommonService
 
-<div class="row justify-content-center">
+@page "/filters"
+@inject CommonService CommonService
 
-    <span class="badge text-dark" style="font-size: 14px; padding-block: 10px;">
-        Фильтры
-    </span>
-
-</div>
-
-<EditForm FormName="filters" Model="@FilterData" OnValidSubmit="OnSubmit">
-    <div class="row mb-3">
-        <label for="inputEmail3" class="col-md-3 col-form-label">Цена</label>
-        <div class="col-md-4">
-            <InputNumber class="form-control" placeholder="От" @bind-Value="@FilterData.PriceFrom" />
-        </div>
-        <div class="col-md-1">-</div>
-        <div class="col-md-4">
-            <InputNumber class="form-control" placeholder="До" @bind-Value="@FilterData.PriceTo" />
-        </div>
+<div>
+    <div class="filters-header">
+        <span class="filters-title">Фильтры</span>
     </div>
-    <div class="row mb-3">
-        <label for="inputEmail3" class="col-md-3 col-form-label">Площадь</label>
-        <div class="col-md-4">
-            <InputNumber class="form-control" placeholder="От" @bind-Value="@FilterData.SquareFrom" />
-        </div>
-        <div class="col-md-1">-</div>
-        <div class="col-md-4">
-            <InputNumber class="form-control" placeholder="До" @bind-Value="@FilterData.SquareTo" />
-        </div>
-    </div>
-    <Div>
-        @foreach (var option in Options)
-        {
-            <div class="row">
-                <label class="col col-form-label">
-                    @option.Name
-                </label>
-                <Div Class="col">
-                    <input type="checkbox" @bind="@checks[option.Id]" />
 
-                </Div>
+    <div class="filters-body">
+        <div class="filter-section">
+            <label class="filter-label">Цена</label>
+            <div class="filter-input-group">
+                <input type="number" class="filter-input" placeholder="От" @bind="FilterData.PriceFrom" />
+                <input type="number" class="filter-input" placeholder="До" @bind="FilterData.PriceTo" />
             </div>
-        }
-    </Div>
-    <Div Class="text-center m-2">
-        <Button Type="ButtonType.Submit" Class="a-link-filer-panel">Применить</Button>
-    </Div>
-</EditForm>
+        </div>
+
+        <div class="filter-section">
+            <label class="filter-label">Площадь</label>
+            <div class="filter-input-group">
+                <input type="number" class="filter-input" placeholder="От" @bind="FilterData.SquareFrom" />
+                <input type="number" class="filter-input" placeholder="До" @bind="FilterData.SquareTo" />
+            </div>
+        </div>
+
+        <div class="filter-section">            
+            <div class="filter-options">
+                @foreach (var option in Options)
+
+                {
+                    <div class="filter-option">
+                        <label for="option-@option.Id">@option.Name</label>
+                        <input type="checkbox" id="option-@option.Id" @bind="checks[option.Id]" />                       
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="filters-footer">
+        <button class="apply-button" @onclick="OnSubmit">Применить</button>
+    </div>
+</div>
 
 @code {
     public HallListFilter FilterData { get; set; } = new HallListFilter();
@@ -58,16 +54,15 @@
     [Parameter]
     public EventCallback<HallListFilter> FilterChanged { get; set; }
 
-    IEnumerable<Option> Options { get; set; } = new List<Option>();
-    Dictionary<int, bool> checks = new();
+    private IEnumerable<Option> Options { get; set; } = new List<Option>();
+    private Dictionary<int, bool> checks = new();
 
     [Parameter]
     public EventCallback ApplyFilter { get; set; }
 
     protected override async Task OnInitializedAsync()
     {
-        var optionsData = await CommonService.GetOptionsAsync();
-        Options = optionsData as IEnumerable<Option> ?? new List<Option>();
+        Options = await CommonService.GetOptionsAsync();
         checks = Options.ToDictionary(o => o.Id, o => false);
     }
 

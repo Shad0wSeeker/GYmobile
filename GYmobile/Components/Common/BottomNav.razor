@@ -1,0 +1,33 @@
+﻿<nav class="bottom-nav">
+    <div class="nav-item" @onclick="NavigateToHome">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-text">Главная</span>
+    </div>
+    <div class="nav-item" @onclick="NavigateToChat">
+        <span class="nav-icon">💬</span>
+        <span class="nav-text">Чат</span>
+    </div>
+    <div class="nav-item" @onclick="NavigateToProfile">
+        <span class="nav-icon">👤</span>
+        <span class="nav-text">Профиль</span>
+    </div>
+</nav>
+
+@code {
+    [Inject] private NavigationManager NavManager { get; set; }
+
+    private void NavigateToHome()
+    {
+        NavManager.NavigateTo("/");
+    }
+
+    private void NavigateToChat()
+    {
+        NavManager.NavigateTo("/chat");
+    }
+
+    private void NavigateToProfile()
+    {
+        NavManager.NavigateTo("/profile");
+    }
+}

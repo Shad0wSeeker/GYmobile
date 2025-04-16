@@ -1,0 +1,59 @@
+﻿@page "/login"
+@using Blazored.LocalStorage
+@using GYmobile.Models
+@inject AuthService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+<div class="main-content">
+    <div class="login-wrapper">
+        <h1>Авторизация</h1>
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+            <DataAnnotationsValidator />
+
+            <div class="input-field">
+                <label>Email</label>
+                <InputText @bind-Value="loginModel.Email" class="text-input" />
+            </div>
+
+            <div class="input-field">
+                <label>Password</label>
+                <InputText @bind-Value="loginModel.Password" type="password" class="text-input" />
+            </div>
+
+            <button type="submit" class="login-btn">Войти</button>
+        </EditForm>
+
+        <div class="links">
+            <a href="#">Забыли пароль?</a><br>
+            <a href="#">Ещё нет учётной записи?</a>
+        </div>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="error">@errorMessage</div>
+        }
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private string errorMessage = "";
+
+    private async Task HandleLogin()
+    {
+        var result = await AuthService.LoginAsync(loginModel);
+
+        if (result is not null)
+        {
+            await LocalStorage.SetItemAsync("token", result.Token);
+            await LocalStorage.SetItemAsync("userId", result.UserId);
+            Navigation.NavigateTo("/profile", true); // перейти к профилю
+        }
+        else
+        {
+            errorMessage = "Неверный логин или пароль.";
+        }
+    }
+}

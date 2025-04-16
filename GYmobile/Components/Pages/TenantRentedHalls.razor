@@ -1,0 +1,207 @@
+﻿@page "/rented-halls"
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using System.Diagnostics
+@using Newtonsoft.Json
+
+
+@inject TenantService TenantService
+@inject IAuthenticationService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+
+@if (isLoading)
+{
+    <p>Загрузка</p>
+}
+else if (!isAuthenticated)
+{
+    Navigation.NavigateTo("/login", true);
+}
+else
+{
+    <div class="main-content">
+        <h3>Арендованные залы</h3>
+
+        <div class="client-records-main">
+            <div class="chkbox-story">
+                <p class="archive-state">Архивные</p>
+                <label class="switch">
+                    <input type="checkbox" @bind="IsActive" />
+                    <span class="slider round"></span>
+                </label>
+                <p class="active-state">Активные</p>
+            </div>
+
+            @if (isLoading)
+            {
+                <p>Загрузка данных...</p>
+            }
+            else if (errorMessage != null)
+            {
+                <p class="error-message">@errorMessage</p>
+            }
+            else
+            {
+                @if (IsActive)
+                {
+                    if (currentStory == null || !currentStory.Any())
+                    {
+                        <p>Активные записи отсутствуют</p>
+                    }
+                    else
+                    {
+                        @foreach (var schedule in currentStory)
+                        {
+                            
+                            <div class="debug-force-show">
+                                <h3>Debug Info:</h3>
+                                <p>Schedule is null: @(schedule == null)</p>
+                                <p>PreviewImage is null: @(schedule?.PreviewImage == null)</p>
+                                <p>ImageUri: @(schedule?.PreviewImage?.ImageUri ?? "null")</p>
+                                <p>FullUrl: @GetFullImageUrl(schedule?.PreviewImage?.ImageUri)</p>
+                            </div>
+                            <div class="record-list-component">
+                                <div class="name-with-img">
+                                    <p>@schedule.HallName</p>
+                                    <img class="hall-img" src="@GetFullImageUrl(schedule.PreviewImage?.ImageUri)" />
+                                    <h1>@(GetFullImageUrl(schedule.PreviewImage?.ImageUri))</h1>
+                                    <small style="font-size:10px; color:gray;">
+                                        Path: @schedule.PreviewImage?.ImageUri
+                                    </small>
+                                </div>
+                                <div class="info-column">
+                                    <p>Дата от</p>
+                                    <p>@schedule.DateFrom.ToShortDateString()</p>
+                                </div>
+                                <div class="info-column">
+                                    <p>Дата до</p>
+                                    <p>@schedule.DateTo.ToShortDateString()</p>
+                                </div>
+                                <div class="info-column">
+                                    <p>Время от</p>
+                                    <p>@schedule.DateFrom.ToShortTimeString()</p>
+                                </div>
+                                <div class="info-column">
+                                    <p>Время до</p>
+                                    <p>@schedule.DateTo.ToShortTimeString()</p>
+                                </div>
+                                <div class="info-column">
+                                    <p>Арендодатель</p>
+                                    <p>@schedule.LandlordName</p>
+                                </div>
+                                <a href="/chat/@schedule.RentBorderId" class="a-link">Чат</a>
+                            </div>
+                        }
+                    }
+                }
+                else
+                {
+                    if (archiveStory == null || !archiveStory.Any())
+                    {
+                        <p>Архивные записи отсутствуют</p>
+                    }
+                    else
+                    {
+                        @foreach (var schedule in archiveStory)
+                        {
+                            <div class="debug-force-show">
+                                <h3>Debug Info:</h3>
+                                <p>Schedule is null: @(schedule == null)</p>
+                                <p>PreviewImage is null: @(schedule?.PreviewImage == null)</p>
+                                <p>ImageUri: @(schedule?.PreviewImage?.ImageUri ?? "null")</p>
+                                <p>FullUrl: @GetFullImageUrl(schedule?.PreviewImage?.ImageUri)</p>
+                            </div>
+                            <div class="record-list-component">
+                                <div class="name-with-img">
+                                    <p>@schedule.HallName</p>
+                                    <img class="hall-img" src="@schedule.PreviewImage?.ImageUri" />
+                                    <img class="hall-img" src="@GetFullImageUrl(schedule?.PreviewImage?.ImageUri)" />
+                                </div>
+                                <div class="info-column">
+                                    <div class="info-row"><strong>Дата от:</strong>&nbsp;@schedule.DateFrom.ToShortDateString()</div>
+                                    <div class="info-row"><strong>Дата до:</strong>&nbsp;@schedule.DateTo.ToShortDateString()</div>
+                                    <div class="info-row"><strong>Время от:</strong>&nbsp;@schedule.DateFrom.ToShortTimeString()</div>
+                                    <div class="info-row"><strong>Время до:</strong>&nbsp;@schedule.DateTo.ToShortTimeString()</div>
+                                    <div class="info-row"><strong>Арендодатель:</strong>&nbsp;@schedule.LandlordName</div>
+                                </div>
+                                <a href="/chat/@schedule.RentBorderId" class="a-link">Чат</a>
+                            </div>
+                        }
+                    }
+                }
+            }
+        </div>
+    </div>
+}
+@code {
+    private List<RentDTO> currentStory = new();
+    private List<RentDTO> archiveStory = new();
+    private bool IsActive = true;
+    private bool isLoading = true;
+    private string? errorMessage;
+    private bool isAuthenticated = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("token");
+        if (string.IsNullOrEmpty(token))
+        {
+            isAuthenticated = false;
+            isLoading = false;
+            return;
+        }        
+
+        try
+        {
+            var tenantId = await LocalStorage.GetItemAsync<string>("userId");
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                errorMessage = "Не удалось получить ID пользователя";
+                isLoading = false;
+                return;
+            }
+
+            var rentsJson = await TenantService.GetTenantRentsAsync(tenantId);
+
+            var schedules = JsonConvert.DeserializeObject<List<RentDTO>>(rentsJson);
+
+            if (schedules != null)
+            {
+                currentStory = schedules.Where(x => !x.IsDone).ToList();
+                archiveStory = schedules.Where(x => x.IsDone).ToList();
+            }
+            isAuthenticated = true;
+
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка при загрузке данных: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetFullImageUrl(string? relativePath)
+    {
+        #if DEBUG
+    // Для отладки используем HTTP
+    if (string.IsNullOrEmpty(relativePath))
+        return "http://rentagym.runasp.net/placeholder.jpg";
+     Debug.WriteLine($" URL: {relativePath}");
+    if (relativePath.StartsWith("http"))
+        return relativePath;
+     Debug.WriteLine($"ПОЛУЧЕННЫЙ URL: {relativePath}");
+    return $"http://rentagym.runasp.net/{relativePath.TrimStart('/')}";
+
+           
+    #endif
+
+            return $"http://rentagym.runasp.net/{relativePath}";
+
+    }
+
+}
