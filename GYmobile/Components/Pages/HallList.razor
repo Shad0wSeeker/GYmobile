@@ -1,0 +1,371 @@
+﻿@page "/facility/halls/{facID}"
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using System.Diagnostics
+@using Newtonsoft.Json
+
+@inject LandlordService LandlordService
+@inject IAuthenticationService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@inject HttpClient Http
+
+<div class="main-content">
+    <div class="facility-top">
+        <h3>Мои залы</h3>
+        <a class="a-link" href="/add-hall/@facID">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg> Добавить зал
+        </a>
+    </div>
+
+    @if (_halls == null)
+    {
+        <p>Загрузка ...</p>
+        <p style="color: white">(возможно, залы отсутствуют)</p>
+    }
+    else
+    {
+        <div class="facility-list">
+            @foreach (var h in _halls)
+            {
+                <div class="card">
+
+                    @if (hallImages.ContainsKey(h.Id) && hallImages[h.Id].Any())
+                    {
+                        <img src="@hallImages[h.Id].First()" alt="Preview" class="card-img-top"   />
+                    }
+                    else
+                    {
+                        <div class="no-image">Нет изображения</div>
+                    }
+                     @* <img class="card-img-top" src="@h.Images.First().ImageUri" alt="Image">  *@
+                    
+                    <div class="card-body">
+                        <h5 class="card-title">@h.Name</h5>
+                        <p class="card-text">Цена за час: @h.BasePrice</p>
+                        <p class="card-text">@h.Description</p>
+                    </div>
+                    <div class="card-footer text-center">
+                        <button class="btn btn-primary" @onclick="() => NavigateToHallDetails(h.Id)">Подробнее</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string facID { get; set; }
+
+
+    private List<Facility> _facilities = new();
+    private List<GYmobile.Entities.Hall> _halls = new();
+
+    private bool isLoading = true;
+    private bool isAuthenticated = false;
+    private string errorMessage;
+
+    private Dictionary<int, List<string>> hallImages = new();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("token");
+        if (string.IsNullOrEmpty(token))
+        {
+            isAuthenticated = false;
+            isLoading = false;
+            return;
+        }
+
+        try
+        {
+            var landlordId = await LocalStorage.GetItemAsync<string>("userId");
+            if (string.IsNullOrEmpty(landlordId))
+            {
+                errorMessage = "Не удалось получить ID пользователя";
+                isLoading = false;
+                return;
+            }
+
+            var rentsJson = await LandlordService.GetFacilitiesAsync(landlordId);
+            Debug.WriteLine($"GET FROM API: {rentsJson}");
+
+            _facilities = JsonConvert.DeserializeObject<List<Facility>>(rentsJson);
+
+            _halls = _facilities.Find(x => x.Id == Int32.Parse(facID)).Halls;
+
+            await LoadImagesForHalls();
+
+            isAuthenticated = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Console.WriteLine($"Error loading facilities: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+
+    }
+
+    private void NavigateToHallDetails(int hallId)
+    {
+        Navigation.NavigateTo($"/hall/{hallId}");
+    }
+
+
+    private async Task LoadImagesForHalls()
+    {
+        hallImages.Clear();
+
+        foreach (var hall in _halls)
+        {
+            var images = new List<string>();
+
+            if (hall.Images != null && hall.Images.Any())
+            {
+                foreach (var img in hall.Images)
+                {
+                    if (!string.IsNullOrEmpty(img.ImageUri))
+                    {
+                        try
+                        {
+                            var fullImageUrl = $"http://rentagym.runasp.net/{img.ImageUri}?t={DateTime.Now.Ticks}";
+                            var imageBytes = await Http.GetByteArrayAsync(fullImageUrl);
+                            var base64 = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+                            images.Add(base64);
+                        }
+                        catch (Exception ex)
+                        {
+                            Debug.WriteLine($"Ошибка загрузки изображения для зала {hall.Id}: {ex.Message}");
+                        }
+                    }
+                }
+            }
+
+            hallImages[hall.Id] = images;
+        }
+    }
+
+
+   
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ @* @page "/facility/halls/{facID}"
+ @using Blazored.LocalStorage
+ @using System.Text.Json
+ @using System.Diagnostics
+ @using Newtonsoft.Json
+
+ @inject LandlordService LandlordService
+ @inject IAuthenticationService AuthService
+ @inject ILocalStorageService LocalStorage
+ @inject NavigationManager Navigation
+ @inject HttpClient Http
+
+ <div class="main-content">
+     <div class="facility-top">
+         <h3>Мои залы</h3>
+         <a class="a-link" href="/add-hall/@facID">
+             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                 <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+             </svg> Добавить зал
+         </a>
+     </div>
+
+     @if (_halls == null)
+     {
+         <p>Загрузка ...</p>
+         <p style="color: white">(возможно, залы отсутствуют)</p>
+     }
+     else
+     {
+         @*  <div class="facility-list">
+     @foreach (var h in _halls)
+     {
+     <div class="card">
+     @if (h.Images != null)
+     {
+     foreach(var img in imageUrls)
+     {
+     <img src="@img.First()" alt="@h.Name" class="card-img-top" />
+     }
+     }
+
+     @* <img class="card-img-top" src="@h.Images.First().ImageUri" alt="Image">
+
+     <div class="card-body">
+     <h5 class="card-title">@h.Name</h5>
+     <p class="card-text">Цена за час: @h.BasePrice</p>
+     <p class="card-text">@h.Description</p>
+     </div>
+     <div class="card-footer text-center">
+     <button class="btn btn-primary" @onclick="() => NavigateToHallDetails(h.Id)">Подробнее</button>
+
+     </div>
+     </div>
+     }
+
+     </div> 
+
+         <div class="facility-list">
+             @foreach (var h in _halls)
+             {
+                 <div class="card">
+                     @foreach (var img in imageUrls)
+                     {
+
+                         <img src="@img" alt="@h.Name" class="card-img-top" />
+
+                         @* <img class="card-img-top" src="@h.Images.First().ImageUri" alt="Image"> 
+
+                         <div class="card-body">
+                             <h5 class="card-title">@h.Name</h5>
+                             <p class="card-text">Цена за час: @h.BasePrice</p>
+                             <p class="card-text">@h.Description</p>
+                         </div>
+                         <div class="card-footer text-center">
+                             <button class="btn btn-primary" @onclick="() => NavigateToHallDetails(h.Id)">Подробнее</button>
+
+                         </div>
+
+                     }
+                 </div>
+             }
+
+         </div>
+     }
+ </div>
+
+ @code {
+     [Parameter] public string facID { get; set; }
+
+
+     private List<Facility> _facilities = new();
+     private List<GYmobile.Entities.Hall> _halls = new();
+
+     private bool isLoading = true;
+     private bool isAuthenticated = false;
+     private string errorMessage;
+
+     private List<string> imageUrls = new();
+
+
+     protected override async Task OnInitializedAsync()
+     {
+         var token = await LocalStorage.GetItemAsync<string>("token");
+         if (string.IsNullOrEmpty(token))
+         {
+             isAuthenticated = false;
+             isLoading = false;
+             return;
+         }
+
+         try
+         {
+             var landlordId = await LocalStorage.GetItemAsync<string>("userId");
+             if (string.IsNullOrEmpty(landlordId))
+             {
+                 errorMessage = "Не удалось получить ID пользователя";
+                 isLoading = false;
+                 return;
+             }
+
+             var rentsJson = await LandlordService.GetFacilitiesAsync(landlordId);
+             Debug.WriteLine($"GET FROM API: {rentsJson}");
+
+             _facilities = JsonConvert.DeserializeObject<List<Facility>>(rentsJson);
+
+             _halls = _facilities.Find(x => x.Id == Int32.Parse(facID)).Halls;
+
+             await LoadImages();
+
+             isAuthenticated = true;
+         }
+         catch (Exception ex)
+         {
+             errorMessage = $"Ошибка загрузки: {ex.Message}";
+             Console.WriteLine($"Error loading facilities: {ex}");
+         }
+         finally
+         {
+             isLoading = false;
+         }
+
+     }
+
+     private void NavigateToHallDetails(int hallId)
+     {
+         Navigation.NavigateTo($"/hall/{hallId}");
+     }
+
+
+     private async Task LoadImages()
+     {
+         imageUrls.Clear();
+
+         foreach (var h in _halls)
+         {
+             try
+             {
+                 if (h.Images != null)
+                 {
+                     foreach (var img in h.Images)
+                     {
+                         if (!string.IsNullOrEmpty(img.ImageUri))
+                         {
+                             var fullImageUrl = $"http://rentagym.runasp.net/{img.ImageUri}?t={DateTime.Now.Ticks}";
+                             Debug.WriteLine($"Trying to load image from: {fullImageUrl}");
+                             var imageBytes = await Http.GetByteArrayAsync(fullImageUrl);
+                             var base64 = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+                             imageUrls.Add(base64);
+                         }
+                     }
+                 }
+             }
+             catch (Exception ex)
+             {
+                 Debug.WriteLine($"Image load error: {ex.Message}");
+             }
+
+             finally
+             {
+                 isLoading = false;
+                 StateHasChanged();
+             }
+         }
+     }
+ }
+
+ *@

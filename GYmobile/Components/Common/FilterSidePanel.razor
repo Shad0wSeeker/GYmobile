@@ -1,7 +1,5 @@
-﻿
-@inject CommonService CommonService
-
-@page "/filters"
+﻿@page "/filters"
+@using System.Diagnostics
 @inject CommonService CommonService
 
 <div>
@@ -31,9 +29,15 @@
                 @foreach (var option in Options)
 
                 {
-                    <div class="filter-option">
+                    @* <div class="filter-option">
                         <label for="option-@option.Id">@option.Name</label>
                         <input type="checkbox" id="option-@option.Id" @bind="checks[option.Id]" />                       
+                    </div> *@
+                    <div class="filter-option">
+                        <label for="option-@option.Id">@option.Name</label>
+                        <input type="checkbox" id="option-@option.Id"
+                               checked="@checks[option.Id]"
+                               @onchange="@(() => OnChecked(option.Id))" />
                     </div>
                 }
             </div>
@@ -41,37 +45,76 @@
     </div>
 
     <div class="filters-footer">
-        <button class="apply-button" @onclick="OnSubmit">Применить</button>
+        <button type="button" class="apply-button" @onclick="OnSubmit">Применить</button>
     </div>
 </div>
 
 @code {
-    public HallListFilter FilterData { get; set; } = new HallListFilter();
+
+    public HallListFilter FilterData { get; set; } = new()
+    {
+        OptionIds = new List<int>() // <== добавь инициализацию
+    };
 
     [Parameter]
-    public HallListFilter Filter { get; set; } = new HallListFilter();
+    public HallListFilter Filter { get; set; } = new();
 
     [Parameter]
     public EventCallback<HallListFilter> FilterChanged { get; set; }
 
     private IEnumerable<Option> Options { get; set; } = new List<Option>();
-    private Dictionary<int, bool> checks = new();
+
+    private Dictionary<int, bool> checks;
+
+    bool Checked { get; set; }
 
     [Parameter]
     public EventCallback ApplyFilter { get; set; }
 
+
+
     protected override async Task OnInitializedAsync()
     {
+
+
         Options = await CommonService.GetOptionsAsync();
-        checks = Options.ToDictionary(o => o.Id, o => false);
+
+
+        checks = Options.Select(o => KeyValuePair.Create(o.Id, false)).ToDictionary();
+        //checks = Options.ToDictionary(o => o.Id, o => false);
+    }
+
+    void OnChecked(int id)
+    {
+        checks[id] = !checks[id];
+        if (checks[id])
+        {
+            FilterData.OptionIds.Add(id);
+
+            Debug.WriteLine($"[FilterSidePanel] Выбрана опция Id={id}");
+
+        }
+        else
+        {
+            FilterData.OptionIds.Remove(id);
+
+            Debug.WriteLine($"[FilterSidePanel] Снята опция Id={id}");
+
+        }
     }
 
     private async Task OnSubmit()
     {
         FilterData.OptionIds = checks.Where(c => c.Value).Select(c => c.Key).ToList();
-        Filter = FilterData;
+        // Filter = FilterData;
 
-        await FilterChanged.InvokeAsync(Filter);
+        Debug.WriteLine($"[FilterSidePanel] Применение фильтра FilterData: {@FilterData}", FilterData);
+
+        await FilterChanged.InvokeAsync(FilterData);
+
+
+        // await FilterChanged.InvokeAsync(Filter);
         await ApplyFilter.InvokeAsync();
     }
 }
+ 

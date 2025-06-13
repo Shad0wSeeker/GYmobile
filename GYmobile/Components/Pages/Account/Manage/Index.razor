@@ -1,0 +1,126 @@
+﻿@page "/account/manage"
+@using Newtonsoft.Json
+@using Blazored.LocalStorage
+@using System.ComponentModel.DataAnnotations
+@using System.Diagnostics
+
+@inject ILocalStorageService LocalStorage
+@layout ManageLayout
+@inject AuthService AuthService
+@inject CommonService CommonService
+
+
+<div class="main-content">
+    <h3>Настройки профиля</h3>
+
+
+    @if (user == null)
+    {
+        <p>Загрузка...</p>
+    }
+    else
+    {
+        <EditForm Model="editModel" OnValidSubmit="HandleValidSubmit" class="edit-form">
+            <DataAnnotationsValidator />
+
+
+            <div class="mb-3">
+                <label class="form-label">Имя пользователя</label>
+                <InputText class="form-control" @bind-Value="editModel.UserName" disabled />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Номер телефона</label>
+                @* <InputText class="form-control" @bind-Value="editModel.PhoneNumber" />  *@
+                <input class="form-control"
+                       value="@editModel.PhoneNumber"
+                       @oninput="HandlePhoneInput"
+                       placeholder="Введите номер телефона" />
+                <ValidationMessage For="@(() => editModel.PhoneNumber)" />
+               
+            </div>
+
+            <button type="submit" class="btn btn-primary">Сохранить</button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(statusMessage))
+        {
+            <div class="alert alert-info mt-3">@statusMessage</div>
+        }
+    }
+
+</div>
+
+
+
+@code {
+    private UserDTO? user;
+    private EditProfileModel editModel = new();
+    private string? statusMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = await LocalStorage.GetItemAsync<string>("userId");
+        var json = await CommonService.GetUserInfoAsync(userId);
+        user = JsonConvert.DeserializeObject<UserDTO>(json);
+
+
+        if (user is not null)
+        {
+            editModel = new EditProfileModel
+                {
+                    UserName = user.UserName,
+                    PhoneNumber = user.PhoneNumber
+                };
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        var userId = await LocalStorage.GetItemAsync<string>("userId");
+        var updateRequest = new UpdatePhoneNumberRequest
+            {
+                UserId = userId,
+                PhoneNumber = editModel.PhoneNumber
+            };
+
+
+
+        Debug.WriteLine($"result: {System.Text.Json.JsonSerializer.Serialize(updateRequest)}");
+
+        var result = await CommonService.UpdatePhoneNumberAsync(updateRequest);
+        
+
+        if (result)
+        {
+            statusMessage = "Телефон обновлён";
+            user.PhoneNumber = editModel.PhoneNumber; // Обновим локально
+        }
+        else
+        {
+            statusMessage = "Ошибка при обновлении телефона";
+        }
+    }
+
+    private void HandlePhoneInput(ChangeEventArgs e)
+    {
+        var input = e.Value?.ToString() ?? string.Empty;
+
+        // Разрешённые символы: цифры, +, -, пробел, (, )
+        var cleaned = new string(input.Where(c => char.IsDigit(c) || "+() ".Contains(c)).ToArray());
+
+        editModel.PhoneNumber = cleaned;
+    }
+
+   
+
+    public class EditProfileModel
+    {
+        public string? UserName { get; set; }
+
+        public string? Email { get; set; }
+
+        [Phone(ErrorMessage = "Некорректный номер телефона")]
+        public string? PhoneNumber { get; set; }
+    }
+}

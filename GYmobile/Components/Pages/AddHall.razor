@@ -1,0 +1,410 @@
+﻿@page "/add-hall/{facilityId:int}"
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using System.Net.Http.Headers
+@using System.Diagnostics
+@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@inject LandlordService LandlordService
+@inject CommonService CommonService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@inject HttpClient Http
+
+<div class="main-content">
+    <EditForm Model="@Hall" OnValidSubmit="SaveHallAsync" class="form-container">
+        <div class="form-section">
+            <!-- Загрузка изображений -->
+            <label class="form-label">Загрузите фото (макс. 5 изображений)</label>
+            <InputFile OnChange="@OnInputFileChange" multiple accept="image/*" class="form-control" />
+        
+            @if (uploadResults.Count > 0)
+            {
+                <div class="image-preview">
+                    @foreach (var image in uploadResults)
+                    {
+                        <div class="preview-item">
+                            <img src="@($"data:image/jpeg;base64,{Convert.ToBase64String(image.ImageData)}")" />
+                            <button type="button" @onclick="() => RemoveImage(image)" class="btn-remove">
+                                &times;
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- Основные поля формы -->
+            <label for="validationCustom01" class="form-label">Название</label>
+            <InputText @bind-Value="@Hall.Name" placeholder="Название зала" class="form-control" />
+
+            <label for="validationCustom02" class="form-label">Описание</label>
+            <InputTextArea @bind-Value="@Hall.Description" placeholder="Описание" class="form-control" />
+
+            <label for="validationCustom03" class="form-label">Стоимость аренды за час</label>
+            <InputNumber @bind-Value="@Hall.Price" placeholder="Цена за час" class="form-control" />
+
+            <label for="validationCustom03" class="form-label">Площадь помещения в м²</label>
+            <InputNumber @bind-Value="@Hall.Area" placeholder="Площадь (м²)" class="form-control" />
+
+            <!-- Расписание -->
+            @* <div class="schedule-container">
+                <h4>Расписание работы</h4>
+                @for (int i = 0; i < works.Length; i++)
+                {
+                    <div class="schedule-day">
+                        <label>@GetDayName(i):</label>
+                        <div class="time-inputs">
+                            <input type="time" @bind-value="@works[i].WorkFrom" class="form-control" />
+                            <span>до</span>
+                            <input type="time" @bind-value="@works[i].WorkTo" class="form-control" />
+                        </div>
+                        
+                    </div>
+                }
+            </div> *@
+
+            <div class="schedule-container">
+                <h4>Расписание работы</h4>
+                @for (int i = 0; i < works.Length; i++)
+                {
+                    <div class="schedule-day">
+                        <label>@GetDayName(i):</label>
+                        <div class="time-selection">
+                            <div class="time-group">
+                                <label>С:</label>
+                                <select @bind="works[i].WorkFrom" class="time-select">
+                                    @foreach (var time in AvailableStartTimes)
+                                    {
+                                        <option value="@time">@time.ToString("HH:mm")</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="time-group">
+                                <label>До:</label>
+                                <select @bind="works[i].WorkTo" class="time-select">
+                                    @foreach (var time in AvailableEndTimes)
+                                    {
+                                        <option value="@time">@time.ToString("HH:mm")</option>
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Тип помещения -->
+            <label class="form-label">Тип помещения</label>
+            @* <InputSelect @bind-Value="@selectedType.Id" class="form-control"> *@
+            <InputSelect @bind-Value="@Hall.HallTypeId" class="form-control">
+                <option value="">Выберите тип</option>
+                @foreach (var type in HallTypes)
+                {
+                    <option value="@type.Id">@type.Name</option>
+                }
+            </InputSelect>
+
+            <!-- Дополнительные удобства -->
+            <label class="form-label">Дополнительные удобства</label>
+            <div class="amenities-grid">
+                @foreach (var option in Options)
+                {
+                    <div class="amenity-item">
+                        <input type="checkbox" id="@($"amenity_{option.Id}")" 
+                               checked="@selectedOptionIds.Contains(option.Id)"
+                               @onchange="@(() => ToggleOption(option.Id))" />
+                        <label for="@($"amenity_{option.Id}")">@option.Name</label>
+                    </div>
+                }
+            </div>
+
+            <button type="submit" class="btn-primary" disabled="@isLoading">
+                @if (isLoading)
+                {
+                    <span>Сохранение...</span>
+                }
+                else
+                {
+                    <span>Создать зал</span>
+                }
+            </button>
+        </div>
+
+        <DataAnnotationsValidator />
+    </EditForm>
+</div>
+
+
+@code {
+    [Parameter] public int facilityId { get; set; }
+
+    private CreateHallRequestDTO Hall { get; set; } = new()
+    {
+         ImagePaths = new List<string>()
+        
+    };
+    private List<UploadResult> uploadResults = new();
+    private const int maxAllowedImages = 5;
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+
+    // Данные для выпадающих списков
+    private IEnumerable<Option> Options = new List<Option>();
+    private IEnumerable<HallType> HallTypes = new List<HallType>();
+    private List<int> selectedOptionIds = new();
+    private HallType selectedType = new();
+
+
+    private static readonly TimeOnly[] AvailableStartTimes = GenerateHourOptions(9, 22);
+    private static readonly TimeOnly[] AvailableEndTimes = GenerateHourOptions(10, 23);
+
+    private static TimeOnly[] GenerateHourOptions(int startHour, int endHour)
+    {
+        var times = new List<TimeOnly>();
+        for (int hour = startHour; hour <= endHour; hour++)
+        {
+            times.Add(new TimeOnly(hour, 0));
+        }
+        return times.ToArray();
+    }
+
+    // Расписание работы
+    private WorkSchedulePiece[] works = new WorkSchedulePiece[7]
+    {
+        new() { WorkFrom = new TimeOnly(9, 0), WorkTo = new TimeOnly(23, 0) },
+        new() { WorkFrom = new TimeOnly(9, 0), WorkTo = new TimeOnly(23, 0) },
+        new() { WorkFrom = new TimeOnly(9, 0), WorkTo = new TimeOnly(23, 0) },
+        new() { WorkFrom = new TimeOnly(9, 0), WorkTo = new TimeOnly(23, 0) },
+        new() { WorkFrom = new TimeOnly(9, 0), WorkTo = new TimeOnly(23, 0) },
+        new() { WorkFrom = new TimeOnly(10, 0), WorkTo = new TimeOnly(21, 0) },
+        new() { WorkFrom = new TimeOnly(10, 0), WorkTo = new TimeOnly(21, 0) }
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Загрузка справочников
+            Options = await CommonService.GetOptionsAsync();
+            HallTypes = await CommonService.GetHallTypesAsync();
+
+            if (HallTypes.Any() && Hall.HallTypeId == 0)
+        {
+            Hall.HallTypeId = HallTypes.First().Id;
+        }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки данных: {ex.Message}";
+        }
+    }
+
+    private string GetDayName(int dayIndex)
+    {
+        return dayIndex switch
+        {
+            0 => "Понедельник",
+            1 => "Вторник",
+            2 => "Среда",
+            3 => "Четверг",
+            4 => "Пятница",
+            5 => "Суббота",
+            6 => "Воскресенье",
+            _ => string.Empty
+        };
+    }
+
+    private void ToggleOption(int optionId)
+    {
+        if (selectedOptionIds.Contains(optionId))
+            selectedOptionIds.Remove(optionId);
+        else
+            selectedOptionIds.Add(optionId);
+    }
+
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            const int maxFileSize = 5 * 1024 * 1024; // 5MB
+            var files = e.GetMultipleFiles(maxAllowedImages - uploadResults.Count);
+
+            foreach (var file in files)
+            {
+                var resizedFile = await file.RequestImageFileAsync("image/jpeg", 800, 600);
+                var buffer = new byte[resizedFile.Size];
+                await resizedFile.OpenReadStream().ReadAsync(buffer);
+
+                uploadResults.Add(new UploadResult
+                {
+                    FileName = file.Name,
+                    ImageData = buffer,
+                    ContentType = file.ContentType
+                });
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки изображений: {ex.Message}";
+        }
+    }
+
+    private void RemoveImage(UploadResult image)
+    {
+        uploadResults.Remove(image);
+    }
+
+    // private async Task SaveHallAsync()
+    // {
+    //     isLoading = true;
+    //     errorMessage = string.Empty;
+
+    //     try
+    //     {
+    //         Подготовка данных
+    //         Hall.FacilityId = facilityId;
+    //         Hall.HallTypeId = selectedType.Id;
+    //         Hall.Options = Options.Where(o => selectedOptionIds.Contains(o.Id)).ToList();
+    //         Hall.WorkSchedule = works.ToList();
+
+    //         Загрузка изображений
+    //         foreach (var image in uploadResults)
+    //         {
+    //             using var memoryStream = new MemoryStream(image.ImageData);
+    //             var filePath = await FileService.SaveFileAsync(memoryStream, image.FileName);
+    //             Hall.ImagePaths.Add(filePath);
+    //         }
+
+    //         Сохранение зала
+    //         var success = await LandlordService.CreateHallAsync(Hall);
+    //         if (success)
+    //         {
+    //             Navigation.NavigateTo($"/");
+    //         }
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         errorMessage = $"Ошибка сохранения: {ex.Message}";
+    //     }
+    //     finally
+    //     {
+    //         isLoading = false;
+    //     }
+    // }
+
+
+    private async Task SaveHallAsync()
+    {
+        isLoading = true;
+        errorMessage = string.Empty;
+
+        try
+        {
+            // 1. Валидация
+            if (Hall.HallTypeId == 0)
+            {
+                errorMessage = "Выберите тип помещения";
+                return;
+            }
+
+
+
+            // Подготовка данных
+            Hall.FacilityId = facilityId;
+            Hall.Options = Options.Where(o => selectedOptionIds.Contains(o.Id)).ToList();
+            Hall.WorkSchedule = works.ToList();
+
+            // Загрузка изображений через API
+            if (this.uploadResults.Count > 0)
+            {
+                var formData = new MultipartFormDataContent();
+
+                foreach (var image in this.uploadResults)
+                {
+                    var fileContent = new StreamContent(new MemoryStream(image.ImageData));
+                    fileContent.Headers.ContentType = MediaTypeHeaderValue.Parse(image.ContentType);
+                    formData.Add(fileContent, "files", image.FileName);
+                }
+
+                Debug.WriteLine("Отправка запроса на upload/multiple");
+
+                var response = await Http.PostAsync("http://rentagym.runasp.net/api/upload/multiple", formData);
+
+                Debug.WriteLine($"Статус ответа: {response.StatusCode}");
+
+
+                var content = await response.Content.ReadAsStringAsync();
+
+                // 3. Логируем полный ответ
+                Debug.WriteLine($"Полный ответ: {content}");
+
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    errorMessage = $"Ошибка сервера: {response.StatusCode}";
+                    return;
+                }
+                try
+                {
+                    var result = JsonConvert.DeserializeObject<JObject>(content);
+                    var files = result["$values"]?.ToObject<List<UploadResponse>>()
+                          ?? JsonConvert.DeserializeObject<List<UploadResponse>>(content);
+
+                    Hall.ImagePaths.AddRange(files.Select(f => f.FilePath));
+
+                    // Hall.ImagePaths.AddRange(uploadedFiles
+                    //     .Where(r => !string.IsNullOrEmpty(r.FilePath))
+                    //     .Select(r => r.FilePath));
+                      
+                   
+                }
+                catch (Exception ex)
+                {
+                    errorMessage = $"Ошибка обработки ответа: {ex.Message}";
+                    return;
+                }
+
+                // var uploadResults = await response.Content.ReadFromJsonAsync<List<UploadResponse>>();
+                // Hall.ImagePaths.AddRange(uploadResults.Where(r => r.FilePath != null).Select(r => r.FilePath));
+            }
+
+            // Сохранение зала
+
+            
+            Debug.WriteLine($"отпраляемые данные: {JsonConvert.SerializeObject(Hall, Formatting.Indented)}");
+            var success = await LandlordService.CreateHallAsync(Hall);
+            if (!success)
+            {
+                errorMessage = "Ошибка сохранения зала";
+                return;
+            }
+            if (success)
+            {
+                Navigation.NavigateTo("/", forceLoad: true);
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка сохранения: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    // Вспомогательные классы
+    private class UploadResult
+    {
+        public string FileName { get; set; }
+        public byte[] ImageData { get; set; }
+        public string ContentType { get; set; }
+    }
+
+    private class UploadResponse
+    {
+        public string FileName { get; set; }
+        public string FilePath { get; set; }
+        public string Error { get; set; }
+    }
+}

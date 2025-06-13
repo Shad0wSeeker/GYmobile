@@ -1,0 +1,285 @@
+﻿@page "/chat/{id}"
+@using Microsoft.AspNetCore.SignalR.Client
+@using Newtonsoft.Json
+@using Blazored.LocalStorage
+@using System.Diagnostics
+@inject NavigationManager Navigation
+@inject CommonService CommonService
+@inject AuthService AuthService
+@inject ILocalStorageService LocalStorage
+@implements IAsyncDisposable
+@inject HttpClient Http
+
+<div class="main-content">
+    <div class="chat-container @(inputFocused ? "input-focused" : "")">
+        <div @onclick="NavToDetails" class="chat-header">
+            @if (Current != null)
+            {
+                foreach (var img in imageUrls)
+                {
+                    <img src="@img" alt="@Current.Name" />
+                }
+                <div class="user-info">
+                    <label>@Current.Name</label>
+                    <label>@Current.Price руб</label>
+                </div>
+            }
+            else
+            {
+                <p style="color: black">Загрузка данных...</p>
+            }
+        </div>
+
+        <div class="chat-body" id="chat-body">
+            <ul id="messagesList">
+                @foreach (var message in messages)
+                {
+                    string time = $"{DateTime.Now:t}";
+                    <li class="@(IsUserMessage(message.SenderName) ? "user-message" : "other-message")">
+                        <div>
+                            <p class="time">@time</p>
+                            
+                            <p class="message-descr">@message.Message</p>
+                        </div>
+                    </li>
+                    @* <li class="@(IsUserMessage(message.Message) ? "user-message" : "other-message")">
+                        <div>
+                            <p class="time">@time</p>
+                            <p class="message-descr">@message.Message</p>
+                        </div>
+                    </li> *@
+                }
+            </ul>
+        </div>
+
+        <div class="chat-footer">
+            <div class="message-input">
+                <input class="form-control-chat"
+                       @onfocus="OnInputFocus"
+                       @onblur="OnInputBlur"
+                       @onkeydown="OnKeyPressed"
+                       type="text"
+                       id="message-input"
+                       @bind="messageInput" />
+                <button class="btn-chat" @onclick="Send" disabled="@(!IsConnected || isSending)">
+                    @if (isSending)
+                    {
+                        <span>...</span>
+                    }
+                    else
+                    {
+                        <span>Отправить</span>
+                    }
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string id { get; set; }
+
+    private HubConnection? hubConnection;
+    private List<ChatMessage> messages = new();
+    private string? userEmail;
+    private string? messageInput;
+    private RentDTO? roomData;
+    private HallDetailsRequestDTO? Current;
+    private bool inputFocused = false;
+    private bool isSending = false;
+
+    private bool isLoading = true;
+    private List<string> imageUrls = new();
+
+
+    private void OnInputFocus()
+    {
+        inputFocused = true;
+        StateHasChanged();
+    }
+
+    private void OnInputBlur()
+    {
+        inputFocused = false;
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            userEmail = await AuthService.GetEmailAsync();
+
+            var roomDataJson = await CommonService.GetChatRoomDataAsync(int.Parse(id));
+            roomData = JsonConvert.DeserializeObject<RentDTO>(roomDataJson);
+
+            Debug.WriteLine($"receive roomData: {JsonConvert.SerializeObject(roomData)}");
+
+            var historyJson = await CommonService.GetChatHistoryAsync(id);
+            messages = JsonConvert.DeserializeObject<List<ChatMessage>>(historyJson) ?? new();
+
+            Debug.WriteLine($"receive messages: {JsonConvert.SerializeObject(messages)}");
+
+            if (roomData != null)
+            {
+                Current = await CommonService.GetHallByIdAsync(roomData.HallId);
+            }
+
+            var token = await LocalStorage.GetItemAsync<string>("token");
+
+            hubConnection = new HubConnectionBuilder()
+                .WithUrl(Navigation.ToAbsoluteUri("http://rentagym.runasp.net/chathub"), options =>
+                {
+                    options.AccessTokenProvider = () => Task.FromResult(token);
+                })
+                .WithAutomaticReconnect()
+                .Build();
+
+            hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+            {
+                var displayMessage = $"{user}: {message}";
+
+                if (!messages.Any(m => m.SenderName == user && m.Message.Contains(message)))
+                {
+                    messages.Add(new ChatMessage
+                        {
+                            Id = Guid.NewGuid(),
+                            ChatName = roomData?.RentBorderId.ToString() ?? id,
+                            SenderName = user,
+                            Message = displayMessage
+                        });
+                    InvokeAsync(StateHasChanged);
+                }
+            });
+
+            hubConnection.Reconnected += async (connectionId) =>
+            {
+                if (roomData != null)
+                {
+                    await hubConnection.SendAsync("ConnectToGroup", roomData.RentBorderId.ToString());
+                }
+            };
+
+            await hubConnection.StartAsync();
+
+            if (roomData != null)
+            {
+                await hubConnection.SendAsync("ConnectToGroup", roomData.RentBorderId.ToString());
+            }
+
+            await LoadImages();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Ошибка инициализации чата: {ex.Message}");
+        }
+    }
+
+    private async Task LoadImages()
+    {
+        imageUrls.Clear();
+
+        try
+        {
+            if (Current?.Images != null && Current.Images.Any())
+            {
+                var firstImage = Current.Images.First();
+                if (!string.IsNullOrEmpty(firstImage.ImageUri))
+                {
+                    var fullImageUrl = $"http://rentagym.runasp.net/{firstImage.ImageUri}?t={DateTime.Now.Ticks}";
+                    var imageBytes = await Http.GetByteArrayAsync(fullImageUrl);
+                    var base64 = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+                    imageUrls.Add(base64);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Image load error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private bool IsUserMessage(string? message)
+    {
+        if (string.IsNullOrEmpty(message)) return false;
+        if (string.IsNullOrEmpty(userEmail)) return false;
+        return message.Contains(userEmail, StringComparison.OrdinalIgnoreCase);
+    }
+
+
+
+    private async Task<ElementReference?> GetElementReference(string id)
+    {
+        try
+        {
+            return new ElementReference(id);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void OnKeyPressed(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !isSending)
+        {
+            _ = Send();
+        }
+    }
+
+    private async Task Send()
+    {
+        if (isSending || string.IsNullOrWhiteSpace(messageInput) || hubConnection == null || roomData == null)
+            return;
+
+        try
+        {
+            isSending = true;
+            var displayMessage = $"{userEmail}: {messageInput}";
+
+            messages.Add(new ChatMessage
+                {
+                    Id = Guid.NewGuid(),
+                    ChatName = roomData.RentBorderId.ToString(),
+                    SenderName = userEmail,
+                    Message = displayMessage 
+                });
+
+            await hubConnection.SendAsync("SendPrivate", userEmail, roomData.RentBorderId.ToString(), messageInput);
+
+            messageInput = "";
+        }
+        finally
+        {
+            isSending = false;
+        }
+
+    }
+
+    public bool IsConnected =>
+        hubConnection?.State == HubConnectionState.Connected;
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    private void NavToDetails()
+    {
+        if (roomData != null)
+        {
+            Navigation.NavigateTo($"/hall/{roomData.HallId}");
+        }
+    }    
+}

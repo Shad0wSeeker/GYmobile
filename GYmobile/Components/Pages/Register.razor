@@ -1,0 +1,100 @@
+﻿@page "/register"
+@using GYmobile.Models
+@inject AuthService AuthService
+@inject NavigationManager NavigationManager
+
+
+<div class="main-content">
+    <div class="login-wrapper">
+        <h1>Регистрация</h1>
+
+        <EditForm Model="@registerModel" OnValidSubmit="HandleRegistration">
+            <DataAnnotationsValidator />
+
+            <div class="input-field">
+                <label>Email</label>
+                <InputText @bind-Value="registerModel.Email" class="text-input" />
+                <ValidationMessage For="@(() => registerModel.Email)" />
+                @if (errors.ContainsKey("Email"))
+                {
+                    <div class="validation-error">@errors["Email"]</div>
+                }
+            </div>
+
+            <div class="input-field">
+                <label>Пароль</label>
+                <InputText type="password" @bind-Value="registerModel.Password" class="text-input" />
+                <ValidationMessage For="@(() => registerModel.Password)" />
+            </div>
+
+            <div class="input-field">
+                <label>Подтвердите пароль</label>
+                <InputText type="password" @bind-Value="registerModel.ConfirmPassword" class="text-input" />
+                <ValidationMessage For="@(() => registerModel.ConfirmPassword)" />
+            </div>
+
+            <div class="input-field">
+                <InputCheckbox @bind-Value="registerModel.IsLandlord" class="form-check-input" />
+                <label class="form-check-label">Арендодатель?</label>
+            </div>
+
+            <button type="submit" class="register-btn">Зарегистрироваться</button>
+        </EditForm>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-info mt-3">@message</div>
+        }
+
+        <div class="links">
+            <a href="/login">Уже есть аккаунт? <br />Войти</a>
+        </div>
+        
+    </div>
+</div>
+
+@code {
+    private RegisterModel registerModel = new();
+    private string? message;
+    private Dictionary<string, string> errors = new();
+
+    private async Task HandleRegistration()
+    {
+        errors.Clear();
+        message = null;
+
+        try
+        {
+            var response = await AuthService.RegisterAsync(registerModel);
+            message = "Регистрация прошла успешно. Проверьте email для подтверждения.";
+            NavigationManager.NavigateTo("/RegisterConfirmation");
+        }
+        catch (Exception ex)
+        {
+            // Парсим JSON ошибки
+            try
+            {
+                var errorJson = System.Text.Json.JsonDocument.Parse(ex.Message.Replace("Registration failed: ", ""));
+                if (errorJson.RootElement.TryGetProperty("$values", out var values))
+                {
+                    foreach (var error in values.EnumerateArray())
+                    {
+                        if (error.ToString().Contains("Username"))
+                        {
+                            errors["Email"] = "Этот email уже зарегистрирован";
+                        }
+                        else
+                        {
+                            message = error.ToString();
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                message = ex.Message.Replace("Registration failed: ", "");
+            }
+        }
+    }
+}
+}

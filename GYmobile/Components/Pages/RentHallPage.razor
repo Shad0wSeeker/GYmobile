@@ -6,203 +6,8 @@
 @inject CommonService CommonService
 @inject ILocalStorageService LocalStorage
 @inject Blazored.Toast.Services.IToastService ToastService
-
-@* <div class="form-container">
-
-    <!-- 📅 Выбор даты -->
-    <DatePicker TValue="DateTime?" @bind-Dates="selectedDates"
-                InputMode="DateInputMode.Date"
-                SelectionMode="DateInputSelectionMode.Range"
-                InputFormat="dd.MM.yyyy"
-                DisplayFormat="dd.MM.yyyy"
-                Min="DateTime.Now"
-                Max="DateTime.Today.AddMonths(2).AddDays(-5)"
-                StaticPicker="false"
-                DisabledDates="@dateTimeEnumerable"
-                @bind-Dates:after="LoadTimes"
-                Class="date-picker-component" />
-
-    <!-- 🕓 Подписи -->
-    <div class="before-time-caption">
-        <p class="time-caption">Время от</p>
-        <p class="time-caption">Время до</p>
-    </div>
-
-    <!-- 🕐 Время от -->
-    <div class="schedule-time">
-        <div class="time-from-block">
-            <InputRadioGroup @bind-Value="selectedTimeFrom">
-                @foreach (var time in availableTimesFrom)
-                {
-                    <div class="radio-option">
-                        <InputRadio class="input-radio-time" Value="@time" />
-                        <label>@time.ToString("HH:mm")</label>
-                    </div>
-                }
-            </InputRadioGroup>
-        </div>
-
-        <!-- 🕑 Время до -->
-        <div class="time-to-block">
-            <InputRadioGroup @bind-Value="selectedTimeTo">
-                @foreach (var time in availableTimesTo)
-                {
-                    <div class="radio-option">
-                        <InputRadio class="input-radio-time" Value="@time" />
-                        <label>@time.ToString("HH:mm")</label>
-                    </div>
-                }
-            </InputRadioGroup>
-        </div>
-    </div>
-
-    <!-- ☑️ Еженедельная подписка -->
-    <div class="week-block">
-        <InputCheckbox @bind-Value="weekRent" />
-        <label>Еженедельная подписка</label>
-        <div class="custom-tooltip">
-            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 18 18">
-                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94" />
-            </svg>
-        </div>
-    </div>
-
-    <!-- 🔘 Кнопки -->
-    <div class="btns">
-        <button class="primary-btn" @onclick="SendRentAsync">Отправить</button>
-        <button class="secondary-btn"@*  @onclick="ResetForm" >Сброс</button>
-    </div>
-
-</div> *@
-
-
-
-
-@* 
-
-@code {
-    [Parameter] public string id { get; set; }
-
-    private IReadOnlyList<DateTime?> selectedDates;
-    private IEnumerable<DateTime?> dateTimeEnumerable;
-    private TimeOnly? selectedTimeFrom;
-    private TimeOnly? selectedTimeTo;
-    private List<TimeOnly> availableTimesFrom = new();
-    private List<TimeOnly> availableTimesTo = new();
-    private bool weekRent = false;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadDisabledDates();
-    }
-
-    private async Task LoadDisabledDates()
-    {
-        var today = DateOnly.FromDateTime(DateTime.Today);
-        var nextMonth = today.AddMonths(1);
-
-        // var days1 = await CommonService.GetMonthSchedule(int.Parse(id), today);
-        // var days2 = await CommonService.GetMonthSchedule(int.Parse(id), nextMonth);
-
-        // Получаем JSON как строку
-        var jsonDays1 = await CommonService.GetMonthSchedule(int.Parse(id), today);
-        var jsonDays2 = await CommonService.GetMonthSchedule(int.Parse(id), nextMonth);
-
-        // Десериализуем в список строк
-        var days1 = JsonConvert.DeserializeObject<List<string>>(jsonDays1) ?? new List<string>();
-        var days2 = JsonConvert.DeserializeObject<List<string>>(jsonDays2) ?? new List<string>();
-
-        dateTimeEnumerable = days1.Concat(days2)
-                                .Select(d => DateTime.Parse(d))
-                                .Where(d => d >= DateTime.Today)
-                                .Select(d => (DateTime?)d);
-
-                            
-    }
-
-    private async Task SendRentAsync()
-    {
-        if (selectedDates == null || !selectedDates.Any() ||
-            selectedTimeFrom == null || selectedTimeTo == null)
-        {
-            ToastService.ShowWarning("Пожалуйста, выберите даты и время");
-            return;
-        }
-
-        DateTime firstDate = selectedDates.First()!.Value;
-        DateTime lastDate = selectedDates.Last()!.Value;
-
-        var from = new DateTime(firstDate.Year, firstDate.Month, firstDate.Day,
-                              selectedTimeFrom.Value.Hour, 0, 0);
-        var to = new DateTime(lastDate.Year, lastDate.Month, lastDate.Day,
-                             selectedTimeTo.Value.Hour, 0, 0);
-
-        var userId = await LocalStorage.GetItemAsync<string>("userId");
-        var success = await TenantService.RegisterRentAsync(userId, int.Parse(id), weekRent, from, to);
-
-        if (success)
-        {
-            ToastService.ShowSuccess("Успешно!");
-            Navigation.NavigateTo("/profile");
-        }
-        else
-        {
-            ToastService.ShowError("Что-то пошло не так... Попробуйте выбрать день/время ещё раз");
-        }
-    }
-
-    private async Task LoadTimes()
-    {
-        if (selectedDates?.Any() == true)
-        {
-            availableTimesFrom.Clear();
-            availableTimesTo.Clear();
-
-            var firstDate = DateOnly.FromDateTime(selectedDates.First()!.Value);
-            var lastDate = DateOnly.FromDateTime(selectedDates.Last()!.Value);
-
-            var timeFrom = (List<TimeOnly>)await CommonService.GetDaySchedule(int.Parse(id), firstDate);
-            var timeTo = (List<TimeOnly>)await CommonService.GetDaySchedule(int.Parse(id), lastDate);
-
-            for (int i = 0; i < 24; i++)
-            {
-                if (!timeFrom.Any(t => t.Hour == i))
-                {
-                    availableTimesFrom.Add(new TimeOnly(i, 0));
-                }
-                if (!timeTo.Any(t => t.Hour == i))
-                {
-                    availableTimesTo.Add(new TimeOnly(i, 0));
-                }
-            }
-
-            // Убираем полночь из доступного времени
-            availableTimesFrom.RemoveAll(t => t.Hour == 0);
-            availableTimesTo.RemoveAll(t => t.Hour == 0);
-        }
-    }
-} *@
-
-
-
-
-
-
-
-
-
-
-
-
-@using Blazored.LocalStorage
-@using Newtonsoft.Json
 @using System.Diagnostics
-@inject TenantService TenantService
-@inject NavigationManager Navigation
-@inject CommonService CommonService
-@inject ILocalStorageService LocalStorage
-@inject Blazored.Toast.Services.IToastService ToastService
+
 
 <div class="main-content">
     <div class="form-container">
@@ -247,7 +52,8 @@
                     }
                 </select>
             </div>
-
+        </div>
+        <div class="time-selection">
             <div class="time-group">
                 <label>Время окончания:</label>
                 <select @bind="selectedTimeTo" class="time-select">
@@ -264,11 +70,19 @@
         <div class="week-block">
             <input type="checkbox" id="weeklyRent" @bind="weekRent" />
             <label for="weeklyRent">Еженедельная подписка</label>
-            <div class="custom-tooltip">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 18 18">
-                    <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
-                    <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94" />
-                </svg>
+            <div class="custom-tooltip-wrapper">
+                <div class="custom-tooltip-icon" @onclick="() => showTooltip = !showTooltip">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-question-circle" viewBox="0 0 18 18">
+                        <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16" />
+                        <path d="M5.255 5.786a.237.237 0 0 0 .241.247h.825c.138 0 .248-.113.266-.25.09-.656.54-1.134 1.342-1.134.686 0 1.314.343 1.314 1.168 0 .635-.374.927-.965 1.371-.673.489-1.206 1.06-1.168 1.987l.003.217a.25.25 0 0 0 .25.246h.811a.25.25 0 0 0 .25-.25v-.105c0-.718.273-.927 1.01-1.486.609-.463 1.244-.977 1.244-2.056 0-1.511-1.276-2.241-2.673-2.241-1.267 0-2.655.59-2.75 2.286m1.557 5.763c0 .533.425.927 1.01.927.609 0 1.028-.394 1.028-.927 0-.552-.42-.94-1.029-.94-.584 0-1.009.388-1.009.94" />
+                    </svg>
+                </div>
+                @if (showTooltip)
+                {
+                    <div class="tooltip-box">
+                        Например, вы выбрали бронь: Понедельник, с 10:00 до 12:00. Активация данного пункта будет продлевать вашу бронь на каждый понедельник с 10:00 до 12:00. Не выбирайте, если не уверены. Это поле не обязательно.
+                    </div>
+                }
             </div>
         </div>
 
@@ -283,7 +97,7 @@
 
 @code {
     [Parameter] public string id { get; set; }
-
+    private bool showTooltip = false;
     private DateTime currentMonth = DateTime.Today;
     private List<DateTime> visibleDays = new();
     private HashSet<DateTime> selectedDays = new();
@@ -329,7 +143,8 @@
 
         for (int i = daysFromPrevMonth; i > 0; i--)
         {
-            visibleDays.Add(firstDayOfMonth.AddDays(-i));
+            var day = firstDayOfMonth.AddDays(-i);
+            visibleDays.Add(day);
         }
 
         // Добавляем дни текущего месяца
@@ -353,6 +168,9 @@
         if (day.Month != currentMonth.Month)
             classes.Add("other-month");
 
+        if (day.Date < DateTime.Today)
+            classes.Add("past-day"); // Добавляем класс для прошедших дней
+
         if (disabledDays.Any(d => d.Date == day.Date))
             classes.Add("disabled");
 
@@ -367,7 +185,7 @@
 
     private void SelectDay(DateTime day)
     {
-        if (day.Month != currentMonth.Month || disabledDays.Contains(day))
+        if (day.Month != currentMonth.Month || disabledDays.Contains(day) || day.Date < DateTime.Today)
             return;
 
         if (selectedDays.Contains(day))
@@ -461,6 +279,7 @@
 
             var from = new DateTime(firstDate.Year, firstDate.Month, firstDate.Day,
                                   selectedTimeFrom.Value.Hour, 0, 0);
+
             var to = new DateTime(lastDate.Year, lastDate.Month, lastDate.Day,
                                  selectedTimeTo.Value.Hour, 0, 0);
 

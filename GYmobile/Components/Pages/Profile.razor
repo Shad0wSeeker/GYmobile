@@ -88,11 +88,13 @@ else
                 @if (userRole == "Landlord")
                 {
                     <button class="action-button" @onclick="NavigateToFacilities">Мои объекты</button>
-                    <button class="action-button" @onclick="NavigateToClientRecords">Записи клиентов</button>                   
+                    <button class="action-button" @onclick="NavigateToClientRecords">Записи клиентов</button>
+                    <button class="action-button" @onclick="NavigateToManageAccount">Управление аккаунтом</button>
                 }
                 else
                 {
-                    <button class="action-button" @onclick="NavigateToRentedHalls">Арендованные залы</button>                    
+                    <button class="action-button" @onclick="NavigateToRentedHalls">Арендованные залы</button>
+                    <button class="action-button" @onclick="NavigateToManageAccount">Управление аккаунтом</button>
                 }
             </div>
 
@@ -151,16 +153,21 @@ else
 
     private async Task NavigateToFacilities()
     {
-        Navigation.NavigateTo("/my-facilities", true);
+        Navigation.NavigateTo("/facilities", true);
     }
 
     private async Task NavigateToClientRecords()
     {
-        Navigation.NavigateTo("/client-records", true);
+        Navigation.NavigateTo("/client_records", true);
     }
 
     private async Task NavigateToRentedHalls()
     {
         Navigation.NavigateTo("/rented-halls", true);
+    }
+
+    private async Task NavigateToManageAccount()
+    {
+        Navigation.NavigateTo("/account/manage", true);
     }
 }

@@ -1,4 +1,12 @@
-﻿<nav class="bottom-nav">
+﻿@using Blazored.LocalStorage
+@using System.Security.Claims
+@using Newtonsoft.Json
+
+@inject CommonService CommonService
+@inject AuthService AuthService
+@inject ILocalStorageService LocalStorage
+
+<nav class="bottom-nav">
     <div class="nav-item" @onclick="NavigateToHome">
         <span class="nav-icon">🏠</span>
         <span class="nav-text">Главная</span>
@@ -15,15 +23,29 @@
 
 @code {
     [Inject] private NavigationManager NavManager { get; set; }
+    private string userRole = string.Empty;
 
     private void NavigateToHome()
     {
         NavManager.NavigateTo("/");
     }
 
-    private void NavigateToChat()
+    private async Task NavigateToChat()
     {
-        NavManager.NavigateTo("/chat");
+        var token = await LocalStorage.GetItemAsync<string>("token");
+        if (string.IsNullOrEmpty(token))
+        {
+            NavManager.NavigateTo("login");
+        }
+        userRole = await AuthService.GetUserRoleAsync();
+        if (userRole == "Landlord")
+        {
+            NavManager.NavigateTo("/client_records");
+        }
+        else
+        {
+            NavManager.NavigateTo("/rented-halls");
+        }        
     }
 
     private void NavigateToProfile()

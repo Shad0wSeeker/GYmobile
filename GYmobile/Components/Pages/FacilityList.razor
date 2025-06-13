@@ -1,0 +1,121 @@
+﻿@page "/facilities"
+@using Blazored.LocalStorage
+@using System.Text.Json
+@using System.Diagnostics
+@using Newtonsoft.Json
+
+
+@inject LandlordService LandlordService
+@inject IAuthenticationService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+
+<div class="main-content">
+    <div class="facility-top">
+        <h3>Мои объекты</h3>
+        <a class="a-link" href="/add-object">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-plus" viewBox="0 0 16 16">
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4" />
+            </svg> Добавить объект
+        </a>
+    </div>
+
+    @if (isLoading)
+    {
+        <div class="loading-container">
+            <p>Загрузка...</p>
+        </div>
+    }
+
+    else if (_facilities == null || !_facilities.Any())
+    {
+        <div class="no-facilities">
+            <p>Объекты отсутствуют</p>        
+        </div>
+    }
+    else
+    {
+        <div class="facility-list">
+            @foreach (var f in _facilities)
+            {
+                <div class="card">                     
+                    <img class="card-img-top" src="./Images/objectBackground.png" />
+                    <div class="card-body">
+                        <h5 class="card-title">@f.Name</h5>
+                        <p class="card-text">@f.City</p>
+                        <p class="card-text">@f.Address</p>
+                    </div>
+                    <div class="card-footer text-center">
+                        <button @onclick="() => NavigateToFacilityDetails(f.Id)" class="btn btn-primary">Подробнее</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+
+@code {
+    private List<Facility> _facilities = new();
+    private bool isLoading = true;
+    private bool isAuthenticated = false;
+    private string errorMessage;
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("token");
+        if (string.IsNullOrEmpty(token))
+        {
+            isAuthenticated = false;
+            isLoading = false;
+            return;
+        }
+
+        try
+        {
+            var landlordId = await LocalStorage.GetItemAsync<string>("userId");
+            if (string.IsNullOrEmpty(landlordId))
+            {
+                errorMessage = "Не удалось получить ID пользователя";
+                isLoading = false;
+                return;
+            }
+
+            var rentsJson = await LandlordService.GetFacilitiesAsync(landlordId);
+            Debug.WriteLine($"GET FROM API: {rentsJson}");
+
+            _facilities = JsonConvert.DeserializeObject<List<Facility>>(rentsJson);
+
+            Debug.WriteLine($"GET FACILITIES: {_facilities}");
+            isAuthenticated = true;
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Ошибка загрузки: {ex.Message}";
+            Console.WriteLine($"Error loading facilities: {ex}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetFacilityImageUrl(string imagePath)
+    {
+        if (string.IsNullOrEmpty(imagePath))
+            return "placeholder_facility.jpg";
+
+        return imagePath.StartsWith("http") ? imagePath : $"https://rentagym.runasp.net/{imagePath.TrimStart('/')}";
+    }
+
+    private void NavigateToFacilityDetails(int facilityId)
+    {
+        Navigation.NavigateTo($"/facility/halls/{facilityId}");
+    }
+
+    private void NavigateToLogin()
+    {
+        Navigation.NavigateTo("/login");
+    }
+}

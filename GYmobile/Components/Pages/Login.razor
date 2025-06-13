@@ -26,8 +26,7 @@
         </EditForm>
 
         <div class="links">
-            <a href="#">Забыли пароль?</a><br>
-            <a href="#">Ещё нет учётной записи?</a>
+            <a @onclick="NavigateToRegister">Ещё нет учётной записи?</a>
         </div>
 
         @if (!string.IsNullOrEmpty(errorMessage))
@@ -49,11 +48,16 @@
         {
             await LocalStorage.SetItemAsync("token", result.Token);
             await LocalStorage.SetItemAsync("userId", result.UserId);
-            Navigation.NavigateTo("/profile", true); // перейти к профилю
+            Navigation.NavigateTo("/profile", true); 
         }
         else
         {
             errorMessage = "Неверный логин или пароль.";
         }
+    }
+
+    private async Task NavigateToRegister()
+    {
+        Navigation.NavigateTo("/register", true);
     }
 }

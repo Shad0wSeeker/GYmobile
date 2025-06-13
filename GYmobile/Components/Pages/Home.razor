@@ -1,139 +1,7 @@
-﻿ @* @page "/"
-
- @using GYmobile.Components.Common
- @using MediatR
-
- @inject CommonService CommonService
-
-
- <PageTitle>Home</PageTitle>
- <div class="row bg-body-secondary p-2">
-     <div class="col-2">
-           <TypeSelector @bind-SelectedType="@HallTypeFilter" OnUpdated="@FilterData" /> 
-     </div>
- </div>
-
- <div class="row">
-     <!-- Боковая панель -->
-     <div class="col-md-3 bg-body-secondary bg-opacity-50">
-         <FilterSidePanel @bind-Filter="@Filter" ApplyFilter="FilterData" />
-     </div><!-- Боковая панель -->
-     <!-- Содержимое страницы -->
-     <div class="col-md-9">
-         @if (Halls == null)
-         {
-             <p>Загрузка ...</p>
-             <div class="spinner-border text-warning" role="status">
-                 <span class="visually-hidden">Загрузка...</span>
-             </div>
-         }
-         else if (!Halls.Any())
-         {
-             <p>По Вашему запросу ничего не найдено</p>
-         }
-         else
-         {
-             @foreach (var data in Halls)
-             {
-                 <HallComponent Current="data" />
-             }
-         }
-     </div>
- </div>
-
- @code {
-     public HallType HallTypeFilter { get; set; } = new();
-     IEnumerable<HallListRequestDTO> Halls { get; set; }
-     public HallListFilter Filter { get; set; } = new();
-
-     protected override async Task OnInitializedAsync()
-     {
-         Halls = await CommonService.GetHallListAsync(new HallListFilter());
-     }
-
-     async void FilterData()
-     {
-         Halls = null;
-         Filter.TypeId = HallTypeFilter.Id;
-         Halls = await CommonService.GetHallListAsync(Filter);
-     }
- }
- *@
-
-
-
-
- @*LATEST*@
-
-@* 
+﻿
 @page "/"
 @using GYmobile.Components.Common
-@inject CommonService CommonService
-
-<PageTitle>Главная</PageTitle>
-
-<div class="row bg-body-secondary p-2">
-    <div class="col-2">
-        <TypeSelector @bind-SelectedType="@HallTypeFilter" OnUpdated="@FilterData" />
-    </div>
-</div>
-
-<div class="row">
-    <!-- Боковая панель -->
-    <div class="col-md-3 bg-body-secondary bg-opacity-50">
-        <FilterSidePanel @bind-Filter="@Filter" ApplyFilter="FilterData" />
-    </div>
-    <!-- Содержимое страницы -->
-    <div class="col-md-9">
-        @if (Halls == null)
-        {
-            <p>Загрузка ...</p>
-            <div class="spinner-border text-warning" role="status">
-                <span class="visually-hidden">Загрузка...</span>
-            </div>
-        }
-        else if (!Halls.Any())
-        {
-            <p>По Вашему запросу ничего не найдено</p>
-        }
-        else
-        {
-            @foreach (var data in Halls)
-            {
-                <HallComponent Current="data" />
-            }
-        }
-    </div>
-</div>
-
-
-@code {
-    public HallType HallTypeFilter { get; set; } = new();
-    IEnumerable<HallListRequestDTO> Halls { get; set; }
-    public HallListFilter Filter { get; set; } = new();
-
-    protected override async Task OnInitializedAsync()
-    {
-        Halls = await CommonService.GetHallListAsync(new HallListFilter());
-    }
-
-    async void FilterData()
-    {
-        Halls = null;
-        Filter.TypeId = HallTypeFilter.Id;
-        Halls = await CommonService.GetHallListAsync(Filter);
-    }
-}  *@
-
-
-
-
-
-
-
-
-@page "/"
-@using GYmobile.Components.Common
+@using System.Diagnostics
 @inject CommonService CommonService
 
 <PageTitle>Главная</PageTitle>
@@ -146,7 +14,7 @@
             <div class="col-12">
                 <!-- Кнопка для открытия/закрытия фильтров -->
                 <button class="custom-filter-button" @onclick="ToggleFilters">
-                    Тип <Icon Class="ms-2" Name="IconName.ChevronDown" />
+                    Тип: @HallTypeFilter.Name<Icon Class="ms-2" Name="IconName.ChevronDown" />
                 </button>
             </div>
         </div>
@@ -154,17 +22,17 @@
         <!-- Секция с фильтрами (скрыта по умолчанию) -->
         @if (showFilters)
         {
-            <div class="modal-overlay">
-                <div class="modal-content">
+            <div class="modal-overlayy">
+                <div class="modal-contentt">
                     <div class="modal-header">
                         <h5>Выберите тип помещения</h5>
                         <button class="close-button" @onclick="ToggleFilters">×</button>
                     </div>
                     <div class="modal-body">
-                        <TypeSelector @bind-SelectedType="@HallTypeFilter" OnUpdated="@FilterData" />
+                        <TypeSelector @bind-SelectedType="@HallTypeFilter" />
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-primary" @onclick="ToggleFilters">Закрыть</button>
+                        <button class="btn btn-primary" @onclick="ApplyTypeFilter">Применить</button>
                     </div>
                 </div>
             </div>
@@ -180,7 +48,6 @@
         <div>
             @if (Halls == null)
             {
-                <p>Загрузка ...</p>
                 <div class="spinner-border text-warning" role="status">
                     <span class="visually-hidden">Загрузка...</span>
                 </div>
@@ -212,19 +79,32 @@
     protected override async Task OnInitializedAsync()
     {
         Halls = await CommonService.GetHallListAsync(new HallListFilter());
+        
     }
 
-    async void FilterData()
+    private async Task FilterData()
     {
+        Console.WriteLine($"[Home] Начинаем фильтрацию...");
         Halls = null;
         Filter.TypeId = HallTypeFilter.Id;
+        Console.WriteLine($"[Home] Отправка запроса с TypeId = {Filter.TypeId}");
         Halls = await CommonService.GetHallListAsync(Filter);
+        Console.WriteLine($"[Home] Получено залов: {Halls?.Count()}");
+        StateHasChanged();
+
     }
 
-    private bool showFilters = false; // Состояние для отображения/скрытия фильтров
+    private bool showFilters = false; 
 
     private void ToggleFilters()
     {
-        showFilters = !showFilters; // Переключение состояния фильтров
+        showFilters = !showFilters; 
+    }
+
+    private async Task ApplyTypeFilter()
+    {
+        Debug.WriteLine($"[Home] Применение фильтра: тип Id = {HallTypeFilter?.Id}, имя = {HallTypeFilter?.Name}");
+        showFilters = false; // Закрыть модалку
+        await FilterData();  // Обновить список залов по фильтру
     }
 } 

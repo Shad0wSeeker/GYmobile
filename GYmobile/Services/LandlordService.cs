@@ -30,11 +30,12 @@ namespace GYmobile.Services
             return response.IsSuccessStatusCode;
         }
 
-        public async Task<IEnumerable<Facility>> GetFacilitiesAsync(string landlordId)
+        public async Task<string> GetFacilitiesAsync(string landlordId)
         {
-            return await _httpClient.GetFromJsonAsync<IEnumerable<Facility>>($"/api/landlord/ll/facilities/{landlordId}");
+            return await _httpClient.GetStringAsync($"/api/landlord/ll/facilities/{landlordId}");
+
         }
-       
+
 
         public async Task<string> GetHallRentsAsync(string landlordId)
         {

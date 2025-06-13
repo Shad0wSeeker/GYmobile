@@ -1,49 +1,18 @@
-﻿@* @inject NavigationManager NavigationManager
-
-<div>
-    <p>@Current.Thumbnail.ImageUri</p>
-</div>
-
-<div class="card m-1" style="border-color:#FFC34F;">
-    <div class="row g-0">
-        <div class="col-md-4 item">
-            <img src="@Current.Thumbnail.ImageUri" class="image">
-        </div>
-        <div class="col-md-6">
-            <div class="card-body">
-                <h4 class="card-title">@Current.Name</h4>
-                <p class="card-text">@Current.Description</p>
-                <Rating Color="Color.Warning" SelectedValue="@((int)Current.OverallRating)" Disabled=true MaxValue="5" /> @Current.OverallRating.ToString("0.00")
-            </div>
-        </div>
-        <div class="col-md-2">
-            <Div Class="card-body">
-                <h4 class="card-title">от @Current.Price руб</h4>
-            </Div>
-            <div class=" text-end align-text-bottom p-2">
-                <a href="#" class="text-muted" @onclick="NavigateToHall">Подробнее</a>
-            </div>
-        </div>
-    </div>
-</div>
-@code {
-
-    [Parameter]
-
-    public HallListRequestDTO Current { get; set; } = new();
-
-    void NavigateToHall()
-    {
-        NavigationManager.NavigateTo($"/halls/{Current.Id}");
-    }
-} *@
-
-@using GYmobile.Dto
+﻿@using GYmobile.Dto
+@using System.Diagnostics
 @inject NavigationManager NavigationManager
+@inject HttpClient Http
 
 <div class="hall-card">
     <div class="hall-image">
-        <img src="@Current.Thumbnail.ImageUri" alt="@Current.Name" />
+       @if (imageUrl != null)
+        {
+            <img src="@imageUrl" alt="@Current.Name" />
+        }
+        else
+        {
+            <div class="placeholder-image">Изображение недоступно</div>
+        }
     </div>
     <div class="hall-details">
         <h3>@Current.Name</h3>
@@ -64,14 +33,57 @@
     </div>
     <div class="hall-price">
         <h4>от @Current.Price BYN</h4>
-        <a href="#" @onclick="NavigateToHall">Подробнее</a>
+        <a @onclick="NavigateToHall">Подробнее</a>
     </div>
 </div>
 
 @code {
+
     [Parameter]
 
     public HallListRequestDTO Current { get; set; } = new();
+
+    private string imageUrl;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadImage();
+    }
+
+    private async Task LoadImage()
+    {
+        try
+        {
+            if (Current?.Id > 0 && !string.IsNullOrEmpty(Current.Thumbnail?.ImageUri))
+            {
+                Debug.WriteLine($"Loading image from: {Current.Thumbnail.ImageUri}");
+            
+                var fullImageUrl = $"http://rentagym.runasp.net/{Current.Thumbnail.ImageUri}";
+            
+                // Добавляем временный параметр для избежания кеширования
+                fullImageUrl += $"?t={DateTime.Now.Ticks}";
+            
+                // Скачиваем изображение как массив байтов
+                var imageBytes = await Http.GetByteArrayAsync(fullImageUrl);
+            
+                // Конвертируем в Base64
+                imageUrl = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+            
+                Debug.WriteLine("Image loaded successfully");
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Image load error: {ex.Message}");
+            imageUrl = "placeholder_image.png";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
 
     void NavigateToHall()
     {

@@ -1,0 +1,107 @@
+﻿@page "/add-object"
+@using Blazored.LocalStorage
+@using System.Globalization
+@using System.Diagnostics
+@inject LandlordService LandlordService
+@inject IAuthenticationService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager Navigation
+@inject IJSRuntime JS
+
+<div class="main-content">
+    <EditForm Model="@newObject" OnValidSubmit="SaveFacilityAsync" class="g-3">
+        <div class="form-container">
+            <label class="form-label">Название</label>
+            <InputText @bind-Value="@newObject.Name" class="form-control" />
+
+            <label class="form-label">Страна</label>
+            <InputText @bind-Value="@newObject.Country" class="form-control" />
+
+            <label class="form-label">Город</label>
+            <InputText @bind-Value="@newObject.City" class="form-control" />
+
+            <label class="form-label">Адрес</label>
+            <InputText @bind-Value="@newObject.Address" class="form-control" />
+
+            <!-- Карта для выбора местоположения -->
+
+            <div class="map-containerr">
+                <label class="form-label">Выберите местоположение на карте</label>
+                <div class="map-wrapper">
+                    <div id="leaflet-map"></div>
+                    <div class="map-credits-cover"></div>
+                </div>
+            </div>
+            <button class="btn btn-primary" type="submit">Создать объект</button>
+        </div>
+
+        <DataAnnotationsValidator />
+    </EditForm>
+</div>
+
+
+@code {
+    private DotNetObjectReference<AddObject>? objRef;
+    private CreateFacilityRequestDTO newObject = new();
+    private string MapUrl = string.Empty;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = await LocalStorage.GetItemAsync<string>("userId");
+        if (!string.IsNullOrEmpty(userId))
+        {
+            newObject.LandLordId = userId;
+        }
+
+        // Инициализация карты с координатами по умолчанию
+        newObject.Latitude = 53.9;
+        newObject.Longitude = 27.55;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            objRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("initMap", objRef, newObject.Latitude, newObject.Longitude);
+        }
+    }
+
+    [JSInvokable]
+    public void UpdateCoordinatesFromJs(double lat, double lon)
+    {
+        // newObject.Latitude = lat;
+        // newObject.Longitude = lon;
+        newObject.Longitude = lat;
+        newObject.Latitude = lon;
+        StateHasChanged();
+    }
+
+    private async Task SaveFacilityAsync()
+    {
+        try
+        {
+            isLoading = true;
+            newObject.RegionId = 1;
+            var success = await LandlordService.CreateFacilityAsync(newObject);
+
+            if (success)
+            {
+                Navigation.NavigateTo("/");
+            }
+            else
+            {
+                // Обработка ошибки
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating facility: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+} 

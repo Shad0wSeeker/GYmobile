@@ -1,243 +1,16 @@
-﻿@* @page "/halls/{id}"
-
-@inject IJSRuntime JS
-@inject NavigationManager NavManager
-@inject CommonService CommonService
-@rendermode RenderMode.InteractiveServer
-
-
-@using System.Globalization
-@using Newtonsoft.Json
-
-
-
-@if (Current == null)
-{
-    <div class="spinner-border text-warning" role="status">
-        <span class="visually-hidden">Loading...</span>
-    </div>
-}
-else
-{
-    <PageTitle>@Current.Name</PageTitle>
-
-    <div class="centered-items">
-        <div class="row items">
-            <!-- Содержимое слайдера -->
-            <section class="container">
-                <div class="slider-wrapper">
-                    @* <div class="slider" @ref="slider">
-                        @foreach (var image in images)
-                        {
-                            <img id="@image.Id" class="img-item" src="@image.Source" alt="Hall image" />
-                        }
-                    </div> *@
-                    @* <div class="slider-nav">
-                        @foreach (var image in images)
-                        {
-                            <a @onclick="(() => ChangeSlide(image.Id))" @onclick:preventDefault></a>
-                        }
-                    </div> *@
-@*                 </div>
-            </section> *@
-            <!-- Содержимое рейтинга -->
-            @* <div class="rating-block">
-                <p class="rating-name">Рейтинг</p>
-                <div class="rating-info">
-                    <Rating Color="Color.Warning" SelectedValue="@((int)Current.OverallRating)" Disabled=true MaxValue="5" />
-                    @Current.OverallRating.ToString("0.00")
-                    <p class="rating-count">оценило: @Current.ReviewCount чел.</p>
-                </div>
-            </div> *@
-            <!-- Содержимое описания -->
-           @*  <div class="container-description">
-                <p class="description">@Current.Description</p>
-            </div>
-            <p class="price">Цена: @Current.Price BYN</p>
-            <p class="address">@Current.Address</p> *@
-            @* <div class="contact-info">
-                <!-- Карта -->
-                <MapView Longitude="Current.Longitude" Latitude="Current.Latitude" Zoom="17" Style="height: 400px; width: 600px;">
-                    <Map ArcGISDefaultBasemap="arcgis-topographic">
-                        <BingMapsLayer Key="AhpMcEovB9kF91KWQbiV-Tt9EkId-9iYFaBc04hivbgoPjzfyjkeU804ZgUc9z0-" Style="BingImageryStyle.Hybrid" />
-                    </Map>
-                    <Graphic>
-                        <Point Latitude="Current.Longitude" Longitude="Current.Latitude" />
-                        <SimpleMarkerSymbol Color="@(new MapColor(226, 119, 40))">
-                            <Outline Color="@(new MapColor(255, 255, 255))" Width="1" />
-                        </SimpleMarkerSymbol>
-                    </Graphic>
-                </MapView> *@
-               @*  <div class="contact-block">
-                    <p class="contact-head">Контактная информация:</p>
-                    <p class="contact-phone">@Current.UserName</p>
-                    <p class="contact-phone">@Current.PhoneNumber</p>
-                    <p class="contact-email">@Current.Email</p>
-                </div> *@
-           @*  </div> *@
-       @*  </div>
-    </div>
-} *@
-@* 
-@code {
-    [Parameter]
-
-    public int id { get; set; }
-
-    private HallDetailsRequestDTO Current { get; set; }
-
-    private List<(string Source, string Id)> images = new();
-
-
-
-    private ElementReference slider;
-
-    protected override async Task OnInitializedAsync()
-    {
-
-        Console.WriteLine(JsonConvert.SerializeObject(Current));
-
-
-
-        try
-        {
-            Current = await CommonService.GetHallById(id);
-            if (Current?.Images != null)
-            {
-                for (int i = 0; i < Current.Images.Count; i++)
-                {
-                    images.Add((Current.Images[i].ImageUri, $"slide-{i + 1}"));
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-
-            Console.WriteLine($"Error loading hall details: {ex.Message}");
-
-        }
-    }
-
-    
-
-    private async Task ChangeSlide(string slideId)
-
-    {   // Здесь можно добавить логику смены слайдов
-
-        Console.WriteLine($"Changing slide to: {slideId}");
-
-    }
-} *@
-
-
-
-
-@*LATEST*@
-@* 
-
-@page "/halls/{id}"
-@inject IJSRuntime JS
-@inject NavigationManager NavManager
-@inject CommonService CommonService
-@inject AuthService AuthService
-
-@if (Current == null)
-{
-    <ActivityIndicator IsRunning="true" Color="Orange" />
-}
-else
-{
-    <PageTitle>@Current.Name</PageTitle>
-
-    <ScrollView>
-        <StackLayout Padding="10">
-            <!-- Слайдер изображений -->
-            <CarouselView ItemsSource="@images">
-                <CarouselView.ItemTemplate>
-                    <DataTemplate>
-                        <Image Source="{Binding Source}" Aspect="AspectFill" />
-                    </DataTemplate>
-                </CarouselView.ItemTemplate>
-            </CarouselView>
-
-            <!-- Название и действия -->
-            <StackLayout Orientation="Horizontal" HorizontalOptions="CenterAndExpand">
-                <Label Text="@Current.Name" FontSize="Large" FontAttributes="Bold" />
-                <Button Text="Отзывы" Clicked="OnFeedbackClicked" />
-                <Button Text="Арендовать" Clicked="OnRentClicked" />
-            </StackLayout>
-
-            <!-- Рейтинг -->
-            <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
-                <Label Text="Рейтинг:" FontSize="Medium" />
-                <Label Text="@Current.OverallRating.ToString("0.00")" FontSize="Medium" />
-                <Label Text="@($"({Current.ReviewCount} чел.)")" FontSize="Small" />
-            </StackLayout>
-
-            <!-- Описание -->
-            <Label Text="@Current.Description" FontSize="Medium" />
-
-            <!-- Цена и адрес -->
-            <Label Text="@($"Цена: {Current.Price} BYN")" FontSize="Medium" />
-            <Label Text="@Current.Address" FontSize="Medium" /> *@
-
-            @* <!-- Карта -->
-            <maps:Map x:Name="map" MapType="Street" IsShowingUser="true" WidthRequest="320" HeightRequest="200">
-                <maps:Map.Pins>
-                    <maps:Pin Label="@Current.Name" Address="@Current.Address" Position="{Binding Position}" />
-                </maps:Map.Pins>
-            </maps:Map> *@
-
-            <!-- Контактная информация -->
-         @*    <StackLayout>
-                <Label Text="Контактная информация:" FontSize="Medium" FontAttributes="Bold" />
-                <Label Text="@Current.UserName" FontSize="Medium" />
-                <Label Text="@Current.PhoneNumber" FontSize="Medium" />
-                <Label Text="@Current.Email" FontSize="Medium" />
-            </StackLayout>
-        </StackLayout>
-    </ScrollView>
-}
-
-@code {
-    [Parameter]
-    public string id { get; set; }
-    HallDetailsRequestDTO Current { get; set; }
-    private List<(string Source, string Id)> images;
-
-    protected override async Task OnInitializedAsync()
-    {
-        Current = await CommonService.GetHallById(Int32.Parse(id));
-        images = Current?.Images.Select((img, i) => (img.ImageUri, $"slide-{i + 1}")).ToList();
-    }
-
-    private void OnFeedbackClicked()
-    {
-        NavManager.NavigateTo($"/halls/{id}/feedbacks");
-    }
-
-    private async void OnRentClicked()
-    {
-        var token = await AuthService.LoginAsync("user1@gmail.com", "123456"); // Замените на реальные данные
-        if (token != null)
-        {
-            NavManager.NavigateTo($"/rent/{id}");
-        }
-        else
-        {
-            NavManager.NavigateTo($"/Account/login");
-        }
-    }
-} *@
-
-
+﻿
 @page "/hall/{id}"
+@using Blazorise.Extensions
+@using Blazored.LocalStorage;
 @using Microsoft.Maui.Controls.Maps
 @using Microsoft.Maui.Maps
 @using System.Diagnostics
 @using System.Globalization
+@inject ILocalStorageService LocalStorage
 @inject CommonService CommonService
 @inject NavigationManager NavManager
+@inject HttpClient Http
+
 
 <PageTitle>@(Current?.Name ?? "Зал")</PageTitle>
 
@@ -250,43 +23,6 @@ else
     }
     else
     {
-        <!-- Шапка с названием и рейтингом -->
-        @* <div class="hall-header">
-            <h1>@Current.Name</h1>
-            <div class="rating-container">
-                <span class="rating-label">Рейтинг</span>
-                <span class="rating-value">Оценило @Current.ReviewCount чел.</span>
-                @if (Current.OverallRating > 0)
-                {
-                    <span class="rating-stars">★ @Current.OverallRating.ToString("0.0")</span>
-                }
-            </div>
-        </div> *@
-
-        <div class="hall-content">
-            <!-- Галерея изображений -->
-            @if (Current.Images != null && Current.Images.Any())
-            {
-                <div class="gallery">
-                    @foreach (var image in Current.Images.Take(3))
-                    {
-                        <img src="@image.ImageUri" alt="Фото зала" class="gallery-image" />
-                    }
-                </div>
-            }
-
-            <!-- Кнопки действий -->
-            <div class="action-buttons">
-                <button class="actions" @onclick="NavigateToRent">
-                    Арендовать
-                </button>
-                <button class="actions" @onclick="NavigateToReviews">
-                    Отзывы клиентов
-                </button>
-
-            </div>
-        </div>
-
         <div class="hall-header">
             <h1>@Current.Name</h1>
             <div class="rating-container">
@@ -302,6 +38,65 @@ else
             </div>
         </div>
 
+        <div class="hall-content">
+            <!-- Галерея изображений -->
+            @if (Current.Images != null && Current.Images.Any())
+            {
+                <div class="gallery">
+                    @if (imageUrls.Any())
+                    {
+                        @if (imageUrls.Any())
+                        {                            
+                            <img src="@imageUrls.First()" alt="@Current.Name" class="gallery-image" @onclick="() => OpenImageModal(0)" />
+                        }
+                        @* foreach (var img in imageUrls)
+                        {
+                            <img src="@imageUrls.First()" alt="@Current.Name" class="gallery-image" @onclick="() => OpenImageModal(img)" />
+                            @*  <img src="@img" alt="@Current.Name" class="gallery-image" @onclick="() => OpenImageModal(img)" />  
+                        } *@
+                    }
+                    else
+                    {
+                        <div class="placeholder-image">Изображение недоступно</div>
+                    }
+                </div>
+
+                @if (isModalOpen)
+                {
+                    <div class="modall-overlay" @onclick="CloseImageModal">
+                        <span class="modall-close" @onclick="CloseImageModal">&times;</span>
+
+                        <div class="modall-content" @onclick:stopPropagation="true">
+                            @if (imageUrls.Count > 1)
+                            {
+                                <button class="modal-nav left" @onclick="PreviousImage">&#10094;</button>
+                            }
+
+                            <img src="@selectedImage" class="modall-image" />
+
+                            @if (imageUrls.Count > 1)
+                            {
+                                <button class="modall-nav right" @onclick="NextImage">&#10095;</button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+
+            <!-- Кнопки действий -->
+            <div class="action-buttons">
+                <button class="actions" @onclick="NavigateToRent">
+                    Арендовать
+                </button>
+                <button class="actions" @onclick="NavigateToReviews">
+                    Отзывы клиентов
+                </button>
+
+            </div>
+        </div>
+
+        
+
         <!-- Основной контент -->
         <div class="hall-content">
             
@@ -310,6 +105,12 @@ else
             <div class="description-section">
                 <h3>Описание</h3>
                 <p>@Current.Description</p>
+            </div>
+
+            <!-- Цена -->
+            <div class="description-section">
+                <h3>Цена</h3>
+                <p>@Current.Price BYN</p>
             </div>
 
             <!-- Адрес -->
@@ -359,14 +160,17 @@ else
 
     private HallDetailsRequestDTO Current { get; set; }
     private bool isLoading = true;
-
+    private List<string> imageUrls = new();
     private Map map;
     private Location pinLocation;
+
+    private int currentImageIndex = 0;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
+
             if (int.TryParse(Id, out int hallId))
             {
                 Current = await CommonService.GetHallById(hallId);
@@ -380,7 +184,7 @@ else
                 {
                     Debug.WriteLine("Внимание: получены нулевые координаты!");
                 }
-
+                await LoadImages();
             }
         }
         catch (Exception ex)
@@ -420,18 +224,104 @@ else
 
         string latStr = lat.ToString(CultureInfo.InvariantCulture);
         string lonStr = lon.ToString(CultureInfo.InvariantCulture);
-        
+
         return $"https://www.openstreetmap.org/?mlat={latStr}&mlon={lonStr}#map=17/{latStr}/{lonStr}";
     }
 
-
-    private void NavigateToRent()
+    private async Task LoadImages()
     {
-        NavManager.NavigateTo($"/rent/{Id}");
+        imageUrls.Clear();
+
+        try
+        {
+            if (Current?.Images != null && Current.Images.Any())
+            {
+                foreach (var img in Current.Images)
+                {
+                    if (!string.IsNullOrEmpty(img.ImageUri))
+                    {
+                        var fullImageUrl = $"http://rentagym.runasp.net/{img.ImageUri}?t={DateTime.Now.Ticks}";
+                        var imageBytes = await Http.GetByteArrayAsync(fullImageUrl);
+                        var base64 = $"data:image/jpeg;base64,{Convert.ToBase64String(imageBytes)}";
+                        imageUrls.Add(base64);
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Image load error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+
+    private async Task NavigateToRent()
+    {
+        var token = await LocalStorage.GetItemAsync<string>("token");
+        if (string.IsNullOrEmpty(token))
+        {
+            NavManager.NavigateTo("/login");
+        }
+        else
+        {
+            NavManager.NavigateTo($"/rent/{Id}");
+        }
+       
     }
 
     private void NavigateToReviews()
     {
         NavManager.NavigateTo($"/halls/{Id}/feedbacks");
+    }
+
+
+
+    private bool isModalOpen = false;
+    private string selectedImage = string.Empty;
+
+    // private void OpenImageModal(string img)
+    // {
+    //     selectedImage = img;
+    //     isModalOpen = true;
+    // }
+
+    private void OpenImageModal(int index)
+    {
+        if (index >= 0 && index < imageUrls.Count)
+        {
+            currentImageIndex = index;
+            selectedImage = imageUrls[index];
+            isModalOpen = true;
+        }
+    }
+
+    private void CloseImageModal()
+    {
+        isModalOpen = false;      
+
+    }
+
+
+    private void NextImage()
+    {
+        if (imageUrls.Count > 1)
+        {
+            currentImageIndex = (currentImageIndex + 1) % imageUrls.Count;
+            selectedImage = imageUrls[currentImageIndex];
+        }
+    }
+
+    private void PreviousImage()
+    {
+        if (imageUrls.Count > 1)
+        {
+            currentImageIndex = (currentImageIndex - 1 + imageUrls.Count) % imageUrls.Count;
+            selectedImage = imageUrls[currentImageIndex];
+        }
     }
 }

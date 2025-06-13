@@ -9,7 +9,7 @@
 @inject IAuthenticationService AuthService
 @inject ILocalStorageService LocalStorage
 @inject NavigationManager Navigation
-
+@inject HttpClient Http
 
 @if (isLoading)
 {
@@ -53,45 +53,20 @@ else
                     else
                     {
                         @foreach (var schedule in currentStory)
-                        {
-                            
-                            <div class="debug-force-show">
-                                <h3>Debug Info:</h3>
-                                <p>Schedule is null: @(schedule == null)</p>
-                                <p>PreviewImage is null: @(schedule?.PreviewImage == null)</p>
-                                <p>ImageUri: @(schedule?.PreviewImage?.ImageUri ?? "null")</p>
-                                <p>FullUrl: @GetFullImageUrl(schedule?.PreviewImage?.ImageUri)</p>
-                            </div>
+                        {                          
                             <div class="record-list-component">
                                 <div class="name-with-img">
                                     <p>@schedule.HallName</p>
-                                    <img class="hall-img" src="@GetFullImageUrl(schedule.PreviewImage?.ImageUri)" />
-                                    <h1>@(GetFullImageUrl(schedule.PreviewImage?.ImageUri))</h1>
-                                    <small style="font-size:10px; color:gray;">
-                                        Path: @schedule.PreviewImage?.ImageUri
-                                    </small>
+                                    <img class="hall-img" src="@GetImageUrl(schedule.HallId)" />                                   
                                 </div>
-                                <div class="info-column">
-                                    <p>Дата от</p>
-                                    <p>@schedule.DateFrom.ToShortDateString()</p>
+                                 <div class="info-column">
+                                    <div class="info-row"><strong>Дата от:</strong>&nbsp;@schedule.DateFrom.ToShortDateString()</div>
+                                    <div class="info-row"><strong>Дата до:</strong>&nbsp;@schedule.DateTo.ToShortDateString()</div>
+                                    <div class="info-row"><strong>Время от:</strong>&nbsp;@schedule.DateFrom.ToShortTimeString()</div>
+                                    <div class="info-row"><strong>Время до:</strong>&nbsp;@schedule.DateTo.ToShortTimeString()</div>
+                                    <div class="info-row"><strong>Арендодатель:</strong>&nbsp;@schedule.LandlordName</div>
                                 </div>
-                                <div class="info-column">
-                                    <p>Дата до</p>
-                                    <p>@schedule.DateTo.ToShortDateString()</p>
-                                </div>
-                                <div class="info-column">
-                                    <p>Время от</p>
-                                    <p>@schedule.DateFrom.ToShortTimeString()</p>
-                                </div>
-                                <div class="info-column">
-                                    <p>Время до</p>
-                                    <p>@schedule.DateTo.ToShortTimeString()</p>
-                                </div>
-                                <div class="info-column">
-                                    <p>Арендодатель</p>
-                                    <p>@schedule.LandlordName</p>
-                                </div>
-                                <a href="/chat/@schedule.RentBorderId" class="a-link">Чат</a>
+                                <a href="/chat/@schedule.RentBorderId" class="a-link-chat">Чат</a>
                             </div>
                         }
                     }
@@ -105,19 +80,11 @@ else
                     else
                     {
                         @foreach (var schedule in archiveStory)
-                        {
-                            <div class="debug-force-show">
-                                <h3>Debug Info:</h3>
-                                <p>Schedule is null: @(schedule == null)</p>
-                                <p>PreviewImage is null: @(schedule?.PreviewImage == null)</p>
-                                <p>ImageUri: @(schedule?.PreviewImage?.ImageUri ?? "null")</p>
-                                <p>FullUrl: @GetFullImageUrl(schedule?.PreviewImage?.ImageUri)</p>
-                            </div>
+                        {                            
                             <div class="record-list-component">
                                 <div class="name-with-img">
                                     <p>@schedule.HallName</p>
-                                    <img class="hall-img" src="@schedule.PreviewImage?.ImageUri" />
-                                    <img class="hall-img" src="@GetFullImageUrl(schedule?.PreviewImage?.ImageUri)" />
+                                    <img class="hall-img" src="@GetImageUrl(schedule.HallId)" />
                                 </div>
                                 <div class="info-column">
                                     <div class="info-row"><strong>Дата от:</strong>&nbsp;@schedule.DateFrom.ToShortDateString()</div>
@@ -126,7 +93,7 @@ else
                                     <div class="info-row"><strong>Время до:</strong>&nbsp;@schedule.DateTo.ToShortTimeString()</div>
                                     <div class="info-row"><strong>Арендодатель:</strong>&nbsp;@schedule.LandlordName</div>
                                 </div>
-                                <a href="/chat/@schedule.RentBorderId" class="a-link">Чат</a>
+                                <a href="/chat/@schedule.RentBorderId" class="a-link-chat">Чат</a>
                             </div>
                         }
                     }
@@ -142,6 +109,8 @@ else
     private bool isLoading = true;
     private string? errorMessage;
     private bool isAuthenticated = false;
+
+    private Dictionary<int, string> imageUrls = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -171,6 +140,8 @@ else
             {
                 currentStory = schedules.Where(x => !x.IsDone).ToList();
                 archiveStory = schedules.Where(x => x.IsDone).ToList();
+
+                await LoadImagesAsync(schedules);
             }
             isAuthenticated = true;
 
@@ -185,23 +156,38 @@ else
         }
     }
 
-    private string GetFullImageUrl(string? relativePath)
+     private async Task LoadImagesAsync(List<RentDTO> schedules)
     {
-        #if DEBUG
-    // Для отладки используем HTTP
-    if (string.IsNullOrEmpty(relativePath))
-        return "http://rentagym.runasp.net/placeholder.jpg";
-     Debug.WriteLine($" URL: {relativePath}");
-    if (relativePath.StartsWith("http"))
-        return relativePath;
-     Debug.WriteLine($"ПОЛУЧЕННЫЙ URL: {relativePath}");
-    return $"http://rentagym.runasp.net/{relativePath.TrimStart('/')}";
+        foreach (var rent in schedules)
+        {
+            if (rent.PreviewImage != null && !string.IsNullOrEmpty(rent.PreviewImage.ImageUri))
+            {
+                try
+                {
+                    var fullImageUrl = $"http://rentagym.runasp.net/{rent.PreviewImage.ImageUri}?t={DateTime.Now.Ticks}";
+                    var bytes = await Http.GetByteArrayAsync(fullImageUrl);
+                    var base64 = Convert.ToBase64String(bytes);
+                    imageUrls[rent.HallId] = $"data:image/jpeg;base64,{base64}";
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Ошибка загрузки изображения для зала {rent.HallId}: {ex.Message}");
+                    imageUrls[rent.HallId] = "placeholder.png"; // или путь к локальной заглушке
+                }
+            }
+        }
 
-           
-    #endif
+        StateHasChanged();
+    }
 
-            return $"http://rentagym.runasp.net/{relativePath}";
+    
 
+    private string GetImageUrl(int hallId)
+    {
+        if (imageUrls.TryGetValue(hallId, out var url))
+            return url;
+
+        return "placeholder.png"; // путь по умолчанию
     }
 
 }

@@ -26,10 +26,24 @@ namespace GYmobile
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
 
             builder.Services.AddMauiBlazorWebView();
+            builder.Services.AddScoped(sp =>
+            {
+                var handler = new HttpClientHandler();
+
+#if ANDROID
+    // Разрешаем HTTP трафик для Android
+    handler.ServerCertificateCustomValidationCallback = (message, cert, chain, errors) => true;
+#endif
+
+                return new HttpClient(handler)
+                {
+                    BaseAddress = new Uri("http://rentagym.runasp.net/")
+                };
+            });
 
             builder.Services.AddHttpClient<AuthService>(client =>
             {
-                client.BaseAddress = new Uri("http://rentagym.runasp.net");
+                 client.BaseAddress = new Uri("http://rentagym.runasp.net");
             });
 
             builder.Services.AddHttpClient<CommonService>(client =>
@@ -49,9 +63,6 @@ namespace GYmobile
                 client.BaseAddress = new Uri("http://rentagym.runasp.net");
             });
            
-
-
-
             builder.Services
                 .AddBlazorise(options =>
                 {

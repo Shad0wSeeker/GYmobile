@@ -46,19 +46,67 @@ namespace GYmobile.Services
         {           
            return await _httpClient.GetFromJsonAsync<HallDetailsRequestDTO>($"/api/common/hall/{id}");
         }
-        /*public async Task<HallDetailsRequestDTO> GetHallById(int id)
-        {
-            var response = await _httpClient.GetAsync($"/api/common/hall/{id}");
-            response.EnsureSuccessStatusCode(); // Проверяем, что запрос успешный
-            var json = await response.Content.ReadAsStringAsync(); // Читаем JSON как строку
-            return JsonConvert.DeserializeObject<HallDetailsRequestDTO>(json); // Десериализуем JSON в объект
-        }*/
+
+        //public async Task<IEnumerable<HallListRequestDTO>> GetHallListAsync(HallListFilter filter)
+        //{
+
+        //    return await _httpClient.GetFromJsonAsync<IEnumerable<HallListRequestDTO>>("/api/common/hall/list");
+        //}
 
         public async Task<IEnumerable<HallListRequestDTO>> GetHallListAsync(HallListFilter filter)
         {
-                                             
-            return await _httpClient.GetFromJsonAsync<IEnumerable<HallListRequestDTO>>("/api/common/hall/list");
+            // Формируем query string
+            var url = $"/api/common/hall/list";
+
+            var queryParams = new List<string>();
+
+            if (filter.TypeId > 0)
+                queryParams.Add($"typeId={filter.TypeId}");
+
+            if (filter.PaymentType)
+                queryParams.Add("paymentType=true");
+
+            if (filter.RegionId > 0)
+                queryParams.Add($"regionId={filter.RegionId}");
+
+            if (filter.SquareFrom > 0)
+                queryParams.Add($"squareFrom={filter.SquareFrom}");
+
+            if (filter.SquareTo.HasValue)
+                queryParams.Add($"squareTo={filter.SquareTo.Value}");
+
+            if (filter.PriceFrom > 0)
+                queryParams.Add($"priceFrom={filter.PriceFrom}");
+
+            if (filter.PriceTo.HasValue)
+                queryParams.Add($"priceTo={filter.PriceTo.Value}");
+
+            if (filter.Timestamp.HasValue)
+                queryParams.Add($"timestamp={filter.Timestamp.Value:O}"); 
+
+            if (filter.TimeFrom.HasValue)
+                queryParams.Add($"timeFrom={filter.TimeFrom.Value:O}");
+
+            if (filter.TimeTo.HasValue)
+                queryParams.Add($"timeTo={filter.TimeTo.Value:O}");
+
+            if (filter.OptionIds is { Count: > 0 })
+            {
+                foreach (var optionId in filter.OptionIds)
+                {
+                    queryParams.Add($"optionIds={optionId}");
+                }
+            }
+
+            if (queryParams.Any())
+                url += "?" + string.Join("&", queryParams);
+
+            
+            Debug.WriteLine($"[CommonService] Запрос: {url}");
+
+            return await _httpClient.GetFromJsonAsync<IEnumerable<HallListRequestDTO>>(url);
         }
+
         public async Task<HallDetailsRequestDTO> GetHallByIdAsync(int hallId)
         {
             return await _httpClient.GetFromJsonAsync<HallDetailsRequestDTO>($"/api/common/hall/{hallId}");
@@ -81,10 +129,7 @@ namespace GYmobile.Services
             return await _httpClient.GetStringAsync($"/api/common/user/info/{id}");
         }
 
-        //public async Task<object> GetOptionsAsync()
-        //{
-        //    return await _httpClient.GetStringAsync("api/common/options");
-        //}
+
         public async Task<IEnumerable<Option>> GetOptionsAsync()
         {
             return await _httpClient.GetFromJsonAsync<IEnumerable<Option>>("api/common/options");
@@ -94,6 +139,22 @@ namespace GYmobile.Services
         {
             var response = await _httpClient.PostAsJsonAsync("api/common/message", msg);
             return response.IsSuccessStatusCode ? "Message saved successfully" : "Failed to save message";
+        }
+
+        public async Task<bool> UpdatePhoneNumberAsync(UpdatePhoneNumberRequest request)
+        {
+            var response = await _httpClient.PutAsJsonAsync("api/common/update-phone", request);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<(bool Success, string? Error)> ChangePasswordAsync(ChangePasswordRequest request)
+        {
+            var response = await _httpClient.PutAsJsonAsync("api/common/change-password", request);
+            if (response.IsSuccessStatusCode)
+                return (true, null);
+
+            var errorResponse = await response.Content.ReadFromJsonAsync<Dictionary<string, string>>();
+            return (false, errorResponse?["message"]);
         }
     }
 
